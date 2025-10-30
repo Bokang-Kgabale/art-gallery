@@ -63,20 +63,14 @@ function setupControls() {
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
+    controls.minDistance = 0.5;
+    controls.maxDistance = 4; // Reduced to prevent moving through walls
+    controls.maxPolarAngle = Math.PI / 5; // Prevent going below floor
+    controls.minPolarAngle = Math.PI / 2; // Prevent looking too far up
+    controls.target.set(0, 1.6, -1); // Look toward north wall
 
-    // Disable zoom to prevent camera jumping
-    controls.enableZoom = false;
-
-    // No angle restrictions - free look
-    // controls.maxPolarAngle - not set (unrestricted)
-    // controls.minPolarAngle - not set (unrestricted)
-
-    // Disable panning to keep within room
-    controls.enablePan = false;
-
-    // Set target relative to camera for first-person feel
-    const lookDirection = new THREE.Vector3(0, 0, -1);
-    controls.target.copy(camera.position).add(lookDirection);
+    // Limit panning to keep within room
+    controls.enablePan = false; // Disable panning, use WASD instead
 
     console.log('Controls initialized');
 }
@@ -119,33 +113,43 @@ function createRoom() {
     const roomSize = 10;
     const wallHeight = 3;
 
-    // Floor with granite PBR texture
+    // Floor with procedural wood-like texture
     const floorGeometry = new THREE.PlaneGeometry(roomSize, roomSize);
-    const textureLoader = new THREE.TextureLoader();
 
-    // Load granite textures
-    const graniteColor = textureLoader.load('Granite006A_4K-PNG/Granite006A_4K-PNG_Color.png');
-    const graniteNormal = textureLoader.load('Granite006A_4K-PNG/Granite006A_4K-PNG_NormalGL.png');
-    const graniteRoughness = textureLoader.load('Granite006A_4K-PNG/Granite006A_4K-PNG_Roughness.png');
-    const graniteDisplacement = textureLoader.load('Granite006A_4K-PNG/Granite006A_4K-PNG_Displacement.png');
+    // Create a canvas for procedural wood texture
+    const floorCanvas = document.createElement('canvas');
+    floorCanvas.width = 512;
+    floorCanvas.height = 512;
+    const floorCtx = floorCanvas.getContext('2d');
 
-    // Configure texture wrapping and repeat
-    [graniteColor, graniteNormal, graniteRoughness, graniteDisplacement].forEach(texture => {
-        texture.wrapS = THREE.RepeatWrapping;
-        texture.wrapT = THREE.RepeatWrapping;
-        texture.repeat.set(3, 3); // Adjust for realistic granite tile size
-    });
+    // Draw wood-like pattern
+    const gradient = floorCtx.createLinearGradient(0, 0, 512, 512);
+    gradient.addColorStop(0, '#6b4423');
+    gradient.addColorStop(0.5, '#8b5a3c');
+    gradient.addColorStop(1, '#6b4423');
+    floorCtx.fillStyle = gradient;
+    floorCtx.fillRect(0, 0, 512, 512);
+
+    // Add wood grain
+    for (let i = 0; i < 50; i++) {
+        floorCtx.strokeStyle = `rgba(0, 0, 0, ${Math.random() * 0.1})`;
+        floorCtx.lineWidth = Math.random() * 2;
+        floorCtx.beginPath();
+        floorCtx.moveTo(Math.random() * 512, 0);
+        floorCtx.lineTo(Math.random() * 512, 512);
+        floorCtx.stroke();
+    }
+
+    const floorTexture = new THREE.CanvasTexture(floorCanvas);
+    floorTexture.wrapS = THREE.RepeatWrapping;
+    floorTexture.wrapT = THREE.RepeatWrapping;
+    floorTexture.repeat.set(4, 4);
 
     const floorMaterial = new THREE.MeshStandardMaterial({
-        map: graniteColor,
-        normalMap: graniteNormal,
-        roughnessMap: graniteRoughness,
-        displacementMap: graniteDisplacement,
-        displacementScale: 0.01,
-        roughness: 0.7,
-        metalness: 0.1
+        map: floorTexture,
+        roughness: 0.8,
+        metalness: 0.2
     });
-
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
@@ -424,10 +428,6 @@ function onKeyUp(event) {
  * Update camera position based on keyboard input
  */
 function updateCameraMovement() {
-    if (!moveForward && !moveBackward && !moveLeft && !moveRight) {
-        return; // No movement input, skip
-    }
-
     const direction = new THREE.Vector3();
     const right = new THREE.Vector3();
 
@@ -439,30 +439,26 @@ function updateCameraMovement() {
     // Get right vector (perpendicular to direction)
     right.crossVectors(camera.up, direction).normalize();
 
-    // Calculate movement delta
-    const moveDelta = new THREE.Vector3();
+    // Calculate movement
+    const moveVector = new THREE.Vector3();
 
     if (moveForward) {
-        moveDelta.add(direction.clone().multiplyScalar(moveSpeed));
+        moveVector.add(direction.multiplyScalar(moveSpeed));
     }
     if (moveBackward) {
-        moveDelta.add(direction.clone().multiplyScalar(-moveSpeed));
+        moveVector.add(direction.multiplyScalar(-moveSpeed));
     }
     if (moveLeft) {
-        moveDelta.add(right.clone().multiplyScalar(moveSpeed));
+        moveVector.add(right.multiplyScalar(moveSpeed));
     }
     if (moveRight) {
-        moveDelta.add(right.clone().multiplyScalar(-moveSpeed));
+        moveVector.add(right.multiplyScalar(-moveSpeed));
     }
 
-    // Save current look direction
-    const lookDirection = new THREE.Vector3();
-    lookDirection.subVectors(controls.target, camera.position);
-
     // Apply movement with collision detection
-    const newPosition = camera.position.clone().add(moveDelta);
+    const newPosition = camera.position.clone().add(moveVector);
 
-    // Check boundaries and update position
+    // Check boundaries
     if (newPosition.x > roomBounds.min && newPosition.x < roomBounds.max) {
         camera.position.x = newPosition.x;
     }
@@ -470,8 +466,12 @@ function updateCameraMovement() {
         camera.position.z = newPosition.z;
     }
 
-    // Update target to maintain look direction
-    controls.target.copy(camera.position).add(lookDirection);
+    // Update orbit controls target to follow camera
+    controls.target.set(
+        camera.position.x,
+        controls.target.y,
+        camera.position.z
+    );
 }
 
 /**
