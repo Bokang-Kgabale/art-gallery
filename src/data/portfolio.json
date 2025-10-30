@@ -1,0 +1,46 @@
+[
+  {
+    "id": "1",
+    "title": "Starry Night",
+    "artist": "Vincent van Gogh",
+    "year": "1889",
+    "description": "The Starry Night is an oil on canvas painting by Dutch Post-Impressionist painter Vincent van Gogh. Painted in June 1889, it depicts the view from the east-facing window of his asylum room at Saint-Rémy-de-Provence.",
+    "image": "/assets/art1.png",
+    "category": "painting",
+    "wall": "north",
+    "position": 0
+  },
+  {
+    "id": "2",
+    "title": "The Great Wave",
+    "artist": "Katsushika Hokusai",
+    "year": "1831",
+    "description": "The Great Wave off Kanagawa is a woodblock print by Japanese ukiyo-e artist Hokusai. It is Hokusai's most famous work and one of the most recognizable works of Japanese art in the world.",
+    "image": "/assets/art2.png",
+    "category": "print",
+    "wall": "north",
+    "position": 1
+  },
+  {
+    "id": "3",
+    "title": "The Scream",
+    "artist": "Edvard Munch",
+    "year": "1893",
+    "description": "The Scream is the popular name given to a composition created by Norwegian artist Edvard Munch. The agonized face in the painting has become one of the most iconic images of art.",
+    "image": "/assets/art3.jpg",
+    "category": "painting",
+    "wall": "east",
+    "position": 0
+  },
+  {
+    "id": "4",
+    "title": "Girl with a Pearl Earring",
+    "artist": "Johannes Vermeer",
+    "year": "1665",
+    "description": "Girl with a Pearl Earring is an oil painting by Dutch Golden Age painter Johannes Vermeer. It is a tronie of a girl wearing an exotic dress, an oriental turban, and a large pearl earring.",
+    "image": "/assets/art4.png",
+    "category": "painting",
+    "wall": "east",
+    "position": 1
+  }
+]
