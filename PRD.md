@@ -8,10 +8,9 @@
 
 ## 1. Vision Statement
 
-To create a **digital brutalist art gallery** where visitors **step inside** your creative world rather than browse a typical website.
-This experience merges **architecture**, **art**, and **technology**, inviting users to explore your portfolio as if they were inside a **museum installation** — immersive, tactile, and cinematic.
+The experience merges **brutalist architecture**, **surreal desert landscapes**, and **interactive technology**, inviting users to explore your portfolio as if they were inside a **monolithic installation** stranded in a vast, sun-drenched desert.
 
-The project embodies **raw realism**, **spatial storytelling**, and **interactive exploration**, emphasizing brutalist principles: **form, material honesty, and light**.
+The project embodies **raw realism**, **atmospheric storytelling**, and **procedural exploration**, emphasizing three core pillars: **brutalist form, natural vastness, and dynamic light**.
 
 ---
 
@@ -38,7 +37,7 @@ The project embodies **raw realism**, **spatial storytelling**, and **interactiv
 
 ### 🏛 Concept:
 
-Visitors enter a **brutalist gallery interior** — vast concrete forms, ambient lighting, minimalist furniture, and framed artworks or digital installations representing your portfolio.
+Visitors find a monolithic **brutalist gallery** perched atop a massive sand dune. The interior — vast concrete forms and minimalist lighting — contrasts with a wild, procedurally generated **high-desert exterior** featuring realistic Joshua trees, cacti, and wind-rippled sand.
 
 ### 🎮 Interaction Flow:
 
@@ -101,10 +100,11 @@ Visitors enter a **brutalist gallery interior** — vast concrete forms, ambient
 
 ### A. Environment & Navigation
 
-* Physically-based rendered (PBR) environment.
-* Realistic lighting setup with tone mapping (`ACESFilmicToneMapping`).
-* Navigation via `OrbitControls` or `FirstPersonControls`.
-* Dynamic fog and ambient light for depth perception.
+* **High-Desert Exterior**: Procedural sand dunes with realistic grain/ripple textures, 3D Joshua trees, Saguaro cacti, and desert formations.
+* **Dynamic Sky System**: A real-time sun system that moves across the sky, casting physically accurate moving shadows inside and outside the gallery.
+* **Brutalist Architecture**: A concrete structure with window slits that allow volumetric "dusty" light shafts to seep in.
+* **Atmospheric Fog**: Dusty horizon haze with fog-shrouded perimeter mountains for a sense of infinite scale.
+* **Snappy Movement**: High-speed, FPS-style WASD navigation and smooth OrbitControls rotation.
 
 ### B. Portfolio Interactions
 

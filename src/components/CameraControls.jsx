@@ -2,10 +2,20 @@ import { useEffect, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
+import useCinematicCamera from '../utils/useCinematicCamera'
+import useGalleryStore from '../store/useGalleryStore'
 
 export default function CameraControls() {
   const { camera } = useThree()
   const controlsRef = useRef()
+
+  // Wire the cinematic dolly hook into this component (same R3F context)
+  useCinematicCamera(controlsRef)
+
+  const selectedArtwork = useGalleryStore((s) => s.selectedArtwork)
+
+  // Disable keyboard / orbit interaction while a transition is happening
+  const isTransitioning = useGalleryStore((s) => s.isTransitioning)
 
   // Movement state
   const moveState = useRef({
@@ -15,120 +25,66 @@ export default function CameraControls() {
     right: false,
   })
 
-  const moveSpeed = 0.05
-  const roomBounds = { min: -4.5, max: 4.5 }
+  // Base movement speed (units per second)
+  const moveSpeed = 8.0
+  // Sensitivity for mouse look
+  const rotateSpeed = 0.6
 
   useEffect(() => {
-    // Keyboard event handlers
     const onKeyDown = (event) => {
+      // Block WASD movement during cinematic dolly
+      if (isTransitioning) return
       switch (event.code) {
-        case 'KeyW':
-        case 'ArrowUp':
-          moveState.current.forward = true
-          break
-        case 'KeyS':
-        case 'ArrowDown':
-          moveState.current.backward = true
-          break
-        case 'KeyA':
-        case 'ArrowLeft':
-          moveState.current.left = true
-          break
-        case 'KeyD':
-        case 'ArrowRight':
-          moveState.current.right = true
-          break
+        case 'KeyW': case 'ArrowUp': moveState.current.forward = true; break
+        case 'KeyS': case 'ArrowDown': moveState.current.backward = true; break
+        case 'KeyA': case 'ArrowLeft': moveState.current.left = true; break
+        case 'KeyD': case 'ArrowRight': moveState.current.right = true; break
       }
     }
 
     const onKeyUp = (event) => {
       switch (event.code) {
-        case 'KeyW':
-        case 'ArrowUp':
-          moveState.current.forward = false
-          break
-        case 'KeyS':
-        case 'ArrowDown':
-          moveState.current.backward = false
-          break
-        case 'KeyA':
-        case 'ArrowLeft':
-          moveState.current.left = false
-          break
-        case 'KeyD':
-        case 'ArrowRight':
-          moveState.current.right = false
-          break
+        case 'KeyW': case 'ArrowUp': moveState.current.forward = false; break
+        case 'KeyS': case 'ArrowDown': moveState.current.backward = false; break
+        case 'KeyA': case 'ArrowLeft': moveState.current.left = false; break
+        case 'KeyD': case 'ArrowRight': moveState.current.right = false; break
       }
     }
 
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
-
     return () => {
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
     }
-  }, [])
+  }, [isTransitioning])
 
-  useFrame(() => {
+  useFrame((state, delta) => {
     if (!controlsRef.current) return
+    // Suppress manual movement while dollying
+    if (isTransitioning || selectedArtwork) return
 
     const { forward, backward, left, right } = moveState.current
-
-    // Update keyboard movement if keys are pressed
     if (forward || backward || left || right) {
       const direction = new THREE.Vector3()
       const rightVector = new THREE.Vector3()
 
-      // Get camera direction
       camera.getWorldDirection(direction)
-      direction.y = 0 // Keep movement horizontal
+      direction.y = 0
       direction.normalize()
-
-      // Get right vector (perpendicular to direction)
       rightVector.crossVectors(camera.up, direction).normalize()
 
-      // Calculate movement delta
       const moveDelta = new THREE.Vector3()
+      const scalar = moveSpeed * delta
+      if (forward) moveDelta.add(direction.clone().multiplyScalar(scalar))
+      if (backward) moveDelta.add(direction.clone().multiplyScalar(-scalar))
+      if (left) moveDelta.add(rightVector.clone().multiplyScalar(scalar))
+      if (right) moveDelta.add(rightVector.clone().multiplyScalar(-scalar))
 
-      if (forward) {
-        moveDelta.add(direction.clone().multiplyScalar(moveSpeed))
-      }
-      if (backward) {
-        moveDelta.add(direction.clone().multiplyScalar(-moveSpeed))
-      }
-      if (left) {
-        moveDelta.add(rightVector.clone().multiplyScalar(moveSpeed))
-      }
-      if (right) {
-        moveDelta.add(rightVector.clone().multiplyScalar(-moveSpeed))
-      }
-
-      // Save current look direction
-      const lookDirection = new THREE.Vector3()
-      lookDirection.subVectors(controlsRef.current.target, camera.position)
-
-      // Apply movement with collision detection
-      const newPosition = camera.position.clone().add(moveDelta)
-
-      // Check boundaries and update position
-      if (newPosition.x > roomBounds.min && newPosition.x < roomBounds.max) {
-        camera.position.x = newPosition.x
-      }
-      if (newPosition.z > roomBounds.min && newPosition.z < roomBounds.max) {
-        camera.position.z = newPosition.z
-      }
-
-      // Update target to maintain look direction
-      controlsRef.current.target.copy(camera.position).add(lookDirection)
+      // Move both camera and target to maintain the same view angle while walking
+      camera.position.add(moveDelta)
+      controlsRef.current.target.add(moveDelta)
     }
-
-    // ALWAYS constrain camera position within room boundaries (runs every frame)
-    // This prevents OrbitControls from moving camera through walls via mouse dragging
-    camera.position.x = Math.max(roomBounds.min, Math.min(roomBounds.max, camera.position.x))
-    camera.position.z = Math.max(roomBounds.min, Math.min(roomBounds.max, camera.position.z))
-    camera.position.y = Math.max(0.5, Math.min(2.5, camera.position.y))
   })
 
   return (
@@ -137,8 +93,13 @@ export default function CameraControls() {
       enablePan={false}
       enableZoom={false}
       enableDamping
-      dampingFactor={0.05}
-      target={[0, 1.6, -1]}
+      dampingFactor={0.1} // More responsive stop
+      rotateSpeed={rotateSpeed}
+      target={[2, 1.6, 4]}
+      // Disable user rotation while a modal is open / transitioning
+      enabled={!selectedArtwork && !isTransitioning}
+      maxPolarAngle={Math.PI * 0.85} // Prevent flipping camera upside down
+      minPolarAngle={Math.PI * 0.15}
     />
   )
 }

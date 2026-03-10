@@ -1,4 +1,6 @@
-A — Architectural floor plan (precise, in meters)
+# Architectural Specifications — The Brutalist Desert Gallery
+
+## A — Architectural Floor Plan (precise, in meters)
 
 Use a consistent coordinate system: origin (0,0) at bottom-left corner of the plan (interior face of walls). Units = meters.
 
@@ -66,7 +68,39 @@ Best wall for artworks: Wall D (top wall) or Wall B (right wall) depending on ci
 
 Circulation flow: Entry (bottom) → move past bench → between pillars → main display wall → angled corner highlights the space toward circular window.
 
-B — Material & finish specification (exact PBR parameters)
+### F — Exterior Desert Environment
+
+The gallery is located in a procedural high-desert landscape.
+
+**Terrain (Sand Dunes):**
+- **Generation**: Sum of 3 Simplex Noise layers (12.0m, 4.5m, 1.4m amplitudes).
+- **Scale**: 400m x 400m size, 140x140 segments.
+- **Flattening**: The area within a 20m radius of the building is flattened using a smoothstep blend.
+- **Materials**: 
+  - **Color**: Canvas-generated sand texture with grain ellipses and wind streaks.
+  - **Normal**: Tiled procedural noise maps simulating wind ripples.
+  - **Roughness**: 0.94 (very dry).
+
+**Flora & Formations:**
+- **Joshua Trees**: 3D assets loaded from `JoshuaTree.3ds`. Material includes trunk and leaf bitmaps. Oriented to local terrain normals.
+- **Saguaro Cacti**: Procedural cylinder-based meshes. Color: `#3d6b4f`.
+- **Rocks**: Randomly deformed Icosahedrons with sand-worn colors (`#8a7e70`).
+- **Spike Plants**: Agave-style cones in radial clusters.
+
+**Atmosphere:**
+- **Fog**: Range 70-220m. Color: Dust tan (`#ccc4aa`).
+- **Mountains**: Perimeter cone meshes (10 total) with noise displacement for rocky silhouettes.
+
+### G — Dynamic Day/Night System
+
+**The Sun & Sky:**
+- **Sun Driver**: Procedural orbit around the gallery. 
+- **Light Source**: Directional light with shadow mapping (2048x2048 res) tracking the sun position.
+- **Interior Light Shafts**: 
+  - Soft volumetric cylinders (`cylinderGeometry`) with `AdditiveBlending` (0.015 opacity).
+  - Point lights at window slits (Wall B) for soft interior illumination.
+
+## B — Material & finish specification (exact PBR parameters)
 
 Base material: Board-formed concrete (exposed)
 
