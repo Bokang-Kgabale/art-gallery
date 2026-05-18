@@ -11,24 +11,9 @@ import DynamicSky from './scenes/DynamicSky'
 import CameraControls from './components/CameraControls'
 import Lighting from './components/Lighting'
 import ArtworkInspector from './ui/ArtworkInspector'
+import FastTravelMenu from './ui/FastTravelMenu'
 import useGalleryStore from './store/useGalleryStore'
-
-// Simple loading screen shown while textures streamin
-function LoadingScreen() {
-  return (
-    <div style={{
-      position: 'absolute', inset: 0, zIndex: 999,
-      background: '#0a090a',
-      display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      color: 'rgba(200,169,110,0.8)',
-      fontFamily: 'monospace', letterSpacing: '3px', fontSize: 13,
-    }}>
-      <div style={{ marginBottom: 16, fontSize: 20 }}>⬛</div>
-      LOADING GALLERY…
-    </div>
-  )
-}
+import { Loader } from '@react-three/drei'
 
 function App() {
   const selectedArtwork = useGalleryStore((s) => s.selectedArtwork)
@@ -120,6 +105,17 @@ function App() {
 
       {/* ── Tomb Raider–style 3-D artwork inspector ─────────── */}
       <ArtworkInspector />
+      
+      {/* ── Fast Travel Menu ─────────── */}
+      <FastTravelMenu />
+
+      {/* ── Loading Screen ─────────── */}
+      <Loader
+        containerStyles={{ background: '#0a090a' }}
+        innerStyles={{ width: '300px' }}
+        barStyles={{ background: '#c8a96e' }}
+        dataStyles={{ color: '#c8a96e', fontFamily: 'monospace', letterSpacing: '2px', fontSize: '13px' }}
+      />
     </div>
   )
 }

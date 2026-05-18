@@ -29,6 +29,15 @@ const useGalleryStore = create((set) => ({
             cameraTarget: null, // null → return to default
         }),
 
+    fastTravel: (position, lookAt) =>
+        set({
+            selectedArtwork: null,
+            isTransitioning: true,
+            cameraTarget: { position, lookAt },
+            defaultCameraPosition: position,
+            defaultCameraLookAt: lookAt
+        }),
+
     setTransitioning: (val) => set({ isTransitioning: val }),
 }))
 

@@ -2,20 +2,12 @@ import { useLoader } from '@react-three/fiber'
 import { TextureLoader, RepeatWrapping, Shape, ShapeGeometry } from 'three'
 import * as THREE from 'three'
 import { useMemo } from 'react'
+import { MeshReflectorMaterial } from '@react-three/drei'
 import GalleryArt from '../components/GalleryArt'
+import CollectionHighlight from '../components/CollectionHighlight'
 import portfolioData from '../data/portfolio.json'
 
 export default function GalleryScene() {
-  // Load granite textures for floor
-  const [graniteColor, graniteNormal, graniteRoughness, graniteDisplacement] = useLoader(
-    TextureLoader,
-    [
-      '/Granite006A_4K-PNG/Granite006A_4K-PNG_Color.png',
-      '/Granite006A_4K-PNG/Granite006A_4K-PNG_NormalGL.png',
-      '/Granite006A_4K-PNG/Granite006A_4K-PNG_Roughness.png',
-      '/Granite006A_4K-PNG/Granite006A_4K-PNG_Displacement.png',
-    ]
-  )
 
   // Load concrete textures for walls
   const [concreteColor, concreteNormal, concreteRoughness] = useLoader(
@@ -27,29 +19,27 @@ export default function GalleryScene() {
     ]
   )
 
-    // Configure granite texture wrapping
-    ;[graniteColor, graniteNormal, graniteRoughness, graniteDisplacement].forEach((texture) => {
-      texture.wrapS = RepeatWrapping
-      texture.wrapT = RepeatWrapping
-      texture.repeat.set(3, 3)
-    })
+  // Configure concrete texture wrapping
+  ;[concreteColor, concreteNormal, concreteRoughness].forEach((texture) => {
+    texture.wrapS = RepeatWrapping
+    texture.wrapT = RepeatWrapping
+    texture.repeat.set(2, 2)
+  })
 
-    // Configure concrete texture wrapping
-    ;[concreteColor, concreteNormal, concreteRoughness].forEach((texture) => {
-      texture.wrapS = RepeatWrapping
-      texture.wrapT = RepeatWrapping
-      texture.repeat.set(2, 2)
-    })
+  // Split portfolio by collection for targeted rendering
+  const scarecrowPieces = portfolioData.filter((a) => a.collection === '051')
+  const regularPieces = portfolioData.filter((a) => a.collection !== '051')
 
-  // Large square floor shape - extends beyond walls
+  // Exact interior floor shape to avoid clipping with outside terrain
   const floorShape = new Shape()
-  floorShape.moveTo(-5, -5)      // Extended bottom-left
-  floorShape.lineTo(25, -5)      // Extended bottom-right  
-  floorShape.lineTo(25, 23)      // Extended top-right
-  floorShape.lineTo(-5, 23)      // Extended top-left
-  floorShape.lineTo(-5, -5)      // Close the shape
+  floorShape.moveTo(0, 0)
+  floorShape.lineTo(20, 0)
+  floorShape.lineTo(20, 14)
+  floorShape.lineTo(15, 18)
+  floorShape.lineTo(2, 18)
+  floorShape.lineTo(0, 0)
 
-  // Create floor geometry with proper UVs for large square
+  // Create floor geometry with proper UVs
   const floorGeometry = useMemo(() => {
     const geometry = new ShapeGeometry(floorShape)
 
@@ -60,8 +50,8 @@ export default function GalleryScene() {
     for (let i = 0; i < uvs.count; i++) {
       const x = uvs.getX(i)
       const y = uvs.getY(i)
-      // Normalize UVs based on the larger square bounds (-5 to 25 for x, -5 to 23 for y)
-      uvArray.push((x + 5) / 30, (y + 5) / 28)
+      // Normalize UVs based on the bounds (0 to 20 for x, 0 to 18 for y)
+      uvArray.push(x / 20, y / 18)
     }
 
     geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvArray, 2))
@@ -70,18 +60,21 @@ export default function GalleryScene() {
 
   return (
     <group position={[-10, 0, -9]}>
-      {/* Floor - Pentagon shape */}
-      <mesh rotation={[-Math.PI / 2, 0, 5]} receiveShadow position={[0, 0, 0]} geometry={floorGeometry}>
-        <meshStandardMaterial
-          color="#A6A0A0"
-          map={graniteColor}
-          normalMap={graniteNormal}
-          roughnessMap={graniteRoughness}
-          displacementMap={graniteDisplacement}
-          displacementScale={0.01}
-          roughness={0.28}
-          metalness={0.0}
-          side={THREE.DoubleSide}
+      {/* Floor - Exact Interior Shape */}
+      {/* Elevated slightly (Y=0.05) to merge perfectly above the exterior sand terrain */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, 0.05, 0]} geometry={floorGeometry}>
+        <MeshReflectorMaterial
+          blur={[300, 100]}
+          resolution={1024}
+          mixBlur={1}
+          mixStrength={80}
+          roughness={0.2}
+          depthScale={1.2}
+          minDepthThreshold={0.4}
+          maxDepthThreshold={1.4}
+          color="#2a2a2a" // Dark charcoal for dramatic contrast
+          metalness={0.5}
+          mirror={1}
         />
       </mesh>
 
@@ -314,8 +307,24 @@ export default function GalleryScene() {
         <meshBasicMaterial color="#fff8c0" transparent opacity={0.05} depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
 
-      {/* Artworks — mapped from portfolio.json */}
-      {portfolioData.map((artwork) => (
+      {/* ── 051 Scarecrow Collection Banner (Wall D, top) ──────── */}
+      {/* Triptych is at x=5.5/9.0/12.5, y=2.5, h=3.0 → top=4.0   */}
+      <CollectionHighlight
+        title="051 Scarecrow Series"
+        subtitle="Digital Art  ·  Triptych"
+        position={[9.0, 4.8, 17.6]}
+        rotation={[0, Math.PI, 0]}
+        ringCount={3}
+        ringSpacing={3.5}
+      />
+
+      {/* ── Regular artworks ────────────────────────────────────── */}
+      {regularPieces.map((artwork) => (
+        <GalleryArt key={artwork.id} artwork={artwork} />
+      ))}
+
+      {/* ── 051 Scarecrow collection pieces ─────────────────────── */}
+      {scarecrowPieces.map((artwork) => (
         <GalleryArt key={artwork.id} artwork={artwork} />
       ))}
     </group>

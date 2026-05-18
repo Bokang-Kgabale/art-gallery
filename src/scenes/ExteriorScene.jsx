@@ -28,7 +28,9 @@ function getTerrainData(x, z) {
 
     // Normal in world space
     // We approximate the slope by taking the cross product of tangent vectors
-    const normal = new THREE.Vector3().crossVectors(v1, v2).normalize()
+    const v1 = new THREE.Vector3(eps, hx - h, 0)
+    const v2 = new THREE.Vector3(0, hz - h, eps)
+    const normal = new THREE.Vector3().crossVectors(v2, v1).normalize()
 
     return { h, normal }
 }
@@ -223,9 +225,7 @@ function JoshuaTree({ scale = 1, rotY = 0 }) {
 function AlignedObject({ x, z, children }) {
     const groupRef = useRef()
     const { h, normal } = useMemo(() => {
-        const data = getTerrainData(x, z)
-        console.log(`Placing object at [${x}, ${data.h}, ${z}] with normal`, data.normal)
-        return data
+        return getTerrainData(x, z)
     }, [x, z])
 
     useEffect(() => {

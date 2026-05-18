@@ -85,6 +85,11 @@ export default function CameraControls() {
       camera.position.add(moveDelta)
       controlsRef.current.target.add(moveDelta)
     }
+
+    // Ground collision constraint: don't let the camera sink below y=0.5
+    if (camera.position.y < 0.5) {
+      camera.position.y = 0.5
+    }
   })
 
   return (
