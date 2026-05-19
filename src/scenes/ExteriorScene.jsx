@@ -1,7 +1,7 @@
-import { useMemo, useRef, useEffect } from 'react'
+import { useMemo } from 'react'
 import * as THREE from 'three'
 import { useLoader } from '@react-three/fiber'
-import { TDSLoader } from 'three/examples/jsm/loaders/TDSLoader'
+import { TextureLoader, RepeatWrapping } from 'three'
 import { createNoise2D } from 'simplex-noise'
 
 // ─── Module-level noise instances ────────────────────────────────────────────
@@ -9,7 +9,7 @@ const terrainNoise = createNoise2D(() => 0.42)
 const mountainNoise = createNoise2D(() => 0.91)
 
 // Helper to get terrain height and normal for alignment
-function getTerrainData(x, z) {
+export function getTerrainData(x, z) {
     const FLAT_IN = 20
     const FLAT_BLEND = 16
     const dist = Math.sqrt(x * x + z * z)
@@ -35,89 +35,44 @@ function getTerrainData(x, z) {
     return { h, normal }
 }
 
-// ─── Procedural sand colour texture (grain + wind streaks) ───────────────────
-function makeSandColorTex(size = 1024) {
-    const canvas = document.createElement('canvas')
-    canvas.width = size; canvas.height = size
-    const ctx = canvas.getContext('2d')
+// ─── Ground054 texture paths ─────────────────────────────────────────────────
+const GROUND054_MAPS = [
+    '/textures/Ground054_4K-PNG/Ground054_4K-PNG_Color.png',
+    '/textures/Ground054_4K-PNG/Ground054_4K-PNG_NormalGL.png',
+    '/textures/Ground054_4K-PNG/Ground054_4K-PNG_Roughness.png',
+    '/textures/Ground054_4K-PNG/Ground054_4K-PNG_Displacement.png',
+    '/textures/Ground054_4K-PNG/Ground054_4K-PNG_AmbientOcclusion.png',
+]
 
-    ctx.fillStyle = '#c4a87a'
-    ctx.fillRect(0, 0, size, size)
-
-    // Grains
-    for (let i = 0; i < 160000; i++) {
-        const x = Math.random() * size
-        const y = Math.random() * size
-        const w = Math.random() * 3.2 + 0.4
-        const h = w * (Math.random() * 0.35 + 0.12)
-        const bv = (Math.random() - 0.5) * 72
-        const r = Math.max(0, Math.min(255, 196 + bv))
-        const g = Math.max(0, Math.min(255, 168 + bv * 0.78))
-        const b = Math.max(0, Math.min(255, 122 + bv * 0.58))
-        ctx.save()
-        ctx.translate(x, y)
-        ctx.rotate(Math.random() * Math.PI)
-        ctx.fillStyle = `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`
-        ctx.beginPath()
-        ctx.ellipse(0, 0, w, h, 0, 0, Math.PI * 2)
-        ctx.fill()
-        ctx.restore()
-    }
-
-    // Wind ripples
-    ctx.globalAlpha = 0.07
-    for (let row = 0; row < 80; row++) {
-        const yBase = (row / 80) * size
-        ctx.strokeStyle = row % 3 === 0 ? '#e8d09a' : (row % 3 === 1 ? '#b08040' : '#d4b880')
-        ctx.lineWidth = Math.random() * 2 + 0.5
-        ctx.beginPath()
-        ctx.moveTo(0, yBase)
-        for (let x = 0; x <= size; x += 18) {
-            ctx.lineTo(x, yBase + (Math.random() - 0.5) * 12)
-        }
-        ctx.stroke()
-    }
-    ctx.globalAlpha = 1
-
-    const tex = new THREE.CanvasTexture(canvas)
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping
-    tex.repeat.set(30, 30)
-    tex.colorSpace = THREE.SRGBColorSpace
-    tex.anisotropy = 16
-    return tex
-}
-
-function makeSandNormalTex(size = 512) {
-    const canvas = document.createElement('canvas')
-    canvas.width = size; canvas.height = size
-    const ctx = canvas.getContext('2d')
-    const img = ctx.createImageData(size, size)
-    const normNoise = createNoise2D(() => 77)
-
-    for (let y = 0; y < size; y++) {
-        for (let x = 0; x < size; x++) {
-            const h = normNoise(x * 0.025, y * 0.14) * 0.65
-            const hx = normNoise((x + 1) * 0.025, y * 0.14) * 0.65
-            const hy = normNoise(x * 0.025, (y + 1) * 0.14) * 0.65
-            const nx = Math.max(0, Math.min(255, Math.round(127 + (hx - h) * 220)))
-            const ny = Math.max(0, Math.min(255, Math.round(127 + (hy - h) * 220)))
-            const i = (y * size + x) * 4
-            img.data[i] = nx; img.data[i + 1] = ny; img.data[i + 2] = 255; img.data[i + 3] = 255
-        }
-    }
-
-    ctx.putImageData(img, 0, 0)
-    const tex = new THREE.CanvasTexture(canvas)
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping
-    tex.repeat.set(30, 30)
-    return tex
-}
-
-const SAND_COLOR = makeSandColorTex(1024)
-const SAND_NORMAL = makeSandNormalTex(512)
+// ─── Concrete044D texture paths ──────────────────────────────────────────────
+const CONCRETE044_MAPS = [
+    '/textures/Concrete044D_4K-PNG/Concrete044D_4K-PNG_Color.png',
+    '/textures/Concrete044D_4K-PNG/Concrete044D_4K-PNG_NormalGL.png',
+    '/textures/Concrete044D_4K-PNG/Concrete044D_4K-PNG_Roughness.png',
+    '/textures/Concrete044D_4K-PNG/Concrete044D_4K-PNG_Metalness.png',
+    '/textures/Concrete044D_4K-PNG/Concrete044D_4K-PNG_Displacement.png',
+    '/textures/Concrete044D_4K-PNG/Concrete044D_4K-PNG_AmbientOcclusion.png',
+]
 
 // ─── Sand terrain ────────────────────────────────────────────────────────────
 function SandTerrain() {
+    // Load Ground054 PBR maps
+    const [
+        groundColor,
+        groundNormal,
+        groundRoughness,
+        groundDisplacement,
+        groundAO,
+    ] = useLoader(TextureLoader, GROUND054_MAPS)
+
+    // Tile the 4K maps 28× across the 400-unit plane for dense sand grain detail
+    ;[groundColor, groundNormal, groundRoughness, groundDisplacement, groundAO].forEach((t) => {
+        t.wrapS = t.wrapT = RepeatWrapping
+        t.repeat.set(28, 28)
+        t.anisotropy = 16
+    })
+    groundColor.colorSpace = THREE.SRGBColorSpace
+
     const geometry = useMemo(() => {
         const size = 400; const segs = 140
         const geo = new THREE.PlaneGeometry(size, size, segs, segs)
@@ -144,139 +99,187 @@ function SandTerrain() {
     return (
         <mesh geometry={geometry} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
             <meshStandardMaterial
-                color="#c4a87a"
-                map={SAND_COLOR}
-                normalMap={SAND_NORMAL}
-                normalScale={new THREE.Vector2(1.2, 1.2)}
-                roughness={0.94}
+                color="#c9a86c"
+                map={groundColor}
+                normalMap={groundNormal}
+                normalScale={new THREE.Vector2(1.8, 1.8)}
+                roughnessMap={groundRoughness}
+                roughness={0.95}
                 metalness={0.0}
+                aoMap={groundAO}
+                aoMapIntensity={0.9}
+                displacementMap={groundDisplacement}
+                displacementScale={0.65}
             />
         </mesh>
     )
 }
 
-// ─── Foggy mountains ──────────────────────────────────────────────────────────
-const MOUNTAIN_SPECS = [
-    { x: 0, z: -195, h: 80, w: 65 }, { x: 90, z: -180, h: 65, w: 60 },
-    { x: -90, z: -170, h: 70, w: 70 }, { x: 160, z: -115, h: 55, w: 55 },
-    { x: -160, z: -100, h: 60, w: 60 }, { x: 200, z: 15, h: 50, w: 50 },
-    { x: -195, z: 30, h: 55, w: 55 }, { x: 170, z: 125, h: 52, w: 55 },
-    { x: -165, z: 110, h: 65, w: 65 }, { x: 30, z: 185, h: 45, w: 60 },
-]
+function ScenicMonoliths({ loadedTextures }) {
+    const {
+        concreteColor,
+        concreteNormal,
+        concreteRoughness,
+        concreteMetalness,
+        concreteDisplacement,
+        concreteAO,
+    } = loadedTextures
 
-function Mountain({ x, z, h, w }) {
-    const geometry = useMemo(() => {
-        const geo = new THREE.ConeGeometry(w, h, 7, 5)
-        const pos = geo.attributes.position
-        for (let i = 0; i < pos.count; i++) {
-            const py = pos.getY(i); const px = pos.getX(i); const pz = pos.getZ(i)
-            if (py < h * 0.4) {
-                const t = 1 - (py + h / 2) / h
-                const n = mountainNoise((px + x) * 0.04, (pz + z) * 0.04)
-                pos.setX(i, px + n * w * 0.18 * t)
-                pos.setZ(i, pz + mountainNoise((px + x) * 0.07, (pz + z) * 0.07) * w * 0.14 * t)
-            }
-        }
-        geo.computeVertexNormals()
-        return geo
-    }, [x, z, h, w])
+    // Build weathered concrete material properties with beautiful displacement deforming
+    // We clone the textures to ensure distinct repeat parameters for the boulders
+    const concreteProps = useMemo(() => {
+        const cColor = concreteColor.clone()
+        const cNormal = concreteNormal.clone()
+        const cRoughness = concreteRoughness.clone()
+        const cMetalness = concreteMetalness.clone()
+        const cDisplacement = concreteDisplacement.clone()
+        const cAO = concreteAO.clone()
 
-    return (
-        <mesh geometry={geometry} position={[x, h * 0.5 - 3, z]} castShadow receiveShadow>
-            <meshStandardMaterial color="#8a97a4" roughness={0.9} />
-        </mesh>
-    )
-}
-
-// ─── Flora & Rocks ────────────────────────────────────────────────────────────
-
-// JoshuaTree component is kept as the primary flora
-function JoshuaTree({ scale = 1, rotY = 0 }) {
-    const model = useLoader(TDSLoader, '/assets/gpx5vko5gcg0-JoshuaTree/JoshuaTree.3ds', (loader) => {
-        loader.setResourcePath('/assets/gpx5vko5gcg0-JoshuaTree/')
-    })
-
-    // Clone and prepare model for shadow support
-    const scene = useMemo(() => {
-        const cloned = model.clone()
-        cloned.traverse((node) => {
-            if (node.isMesh) {
-                node.castShadow = true
-                node.receiveShadow = true
-                // 3DS materials sometimes need a roughness/metalness adjustment for PBR
-                if (node.material) {
-                    node.material.roughness = 0.8
-                    node.material.metalness = 0.1
-                }
-            }
+        ;[cColor, cNormal, cRoughness, cMetalness, cDisplacement, cAO].forEach((t) => {
+            t.wrapS = t.wrapT = RepeatWrapping
+            t.repeat.set(1.5, 1.5)
         })
-        return cloned
-    }, [model])
+        cColor.colorSpace = THREE.SRGBColorSpace
 
-    return (
-        <group scale={scale * 0.15} rotation={[-Math.PI / 2, 0, rotY]}>
-            <primitive object={scene} />
-        </group>
-    )
-}
-
-// ─── Placement Logic with Alignment ───────────────────────────────────────────
-
-function AlignedObject({ x, z, children }) {
-    const groupRef = useRef()
-    const { h, normal } = useMemo(() => {
-        return getTerrainData(x, z)
-    }, [x, z])
-
-    useEffect(() => {
-        if (groupRef.current) {
-            groupRef.current.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal)
+        return {
+            color: '#7a7670',
+            map: cColor,
+            normalMap: cNormal,
+            normalScale: new THREE.Vector2(1.5, 1.5),
+            roughnessMap: cRoughness,
+            roughness: 0.82,
+            metalnessMap: cMetalness,
+            metalness: 0.05,
+            aoMap: cAO,
+            aoMapIntensity: 1.0,
+            displacementMap: cDisplacement,
+            displacementScale: 0.08, // Rugged displacement deforms the outer edges of the rocks beautifully
+            displacementBias: -0.04,
         }
-    }, [normal])
+    }, [concreteColor, concreteNormal, concreteRoughness, concreteMetalness, concreteAO, concreteDisplacement])
+
+    const { monoliths, debris } = useMemo(() => {
+        const rawMonoliths = [
+            { x: 18.0, z: -8.0, w: 1.2, h: 9.0, d: 1.2, ry: 0.2, rx: 0.05 },
+            { x: 22.0, z: -4.5, w: 1.5, h: 6.5, d: 1.5, ry: -0.4, rx: -0.05 },
+            { x: 16.5, z: -2.0, w: 1.0, h: 4.5, d: 1.0, ry: 0.6, rx: 0.1 }
+        ]
+        const rawDebris = [
+            { x: 15.0, z: -9.0, w: 2.2, h: 0.3, d: 1.4, rx: 0.3, ry: 0.5, rz: 0.2 },
+            { x: 20.0, z: -6.0, w: 1.8, h: 0.4, d: 1.8, rx: -0.2, ry: 0.8, rz: 0.1 },
+            { x: 24.5, z: -3.0, w: 2.5, h: 0.3, d: 1.2, rx: 0.1, ry: -0.3, rz: -0.3 }
+        ]
+
+        const formattedMonoliths = rawMonoliths.map(p => {
+            const { h: terrainY } = getTerrainData(p.x, p.z)
+            return { ...p, y: terrainY + p.h / 2 - 0.2 } // bury slightly
+        })
+
+        const formattedDebris = rawDebris.map(p => {
+            const { h: terrainY } = getTerrainData(p.x, p.z)
+            return { ...p, y: terrainY + 0.05 }
+        })
+
+        return { monoliths: formattedMonoliths, debris: formattedDebris }
+    }, [])
 
     return (
-        <group ref={groupRef} position={[x, h - 0.05, z]}>
-            {children}
+        <group>
+            {/* Slabs / Ruins */}
+            {debris.map((d, idx) => (
+                <mesh
+                    key={`debris-${idx}`}
+                    position={[d.x, d.y, d.z]}
+                    rotation={[d.rx, d.ry, d.rz]}
+                    castShadow
+                    receiveShadow
+                >
+                    {/* Subdivided boxGeometry to support clean surface displacement mapping */}
+                    <boxGeometry args={[d.w, d.h, d.d, 15, 15, 15]} />
+                    <meshStandardMaterial {...concreteProps} />
+                </mesh>
+            ))}
+
+            {/* Monolith Slabs */}
+            {monoliths.map((m, idx) => {
+                const isLongest = m.h === 9.0;
+                return (
+                    <mesh
+                        key={`monolith-${idx}`}
+                        position={[m.x, m.y, m.z]}
+                        rotation={[m.rx, m.ry, 0]}
+                        castShadow
+                        receiveShadow
+                    >
+                        {isLongest ? (
+                            // Subdivided cylinderGeometry to support clean cylindrical displacement mapping
+                            <cylinderGeometry args={[m.w / 2, m.w / 2, m.h, 32, 40]} />
+                        ) : (
+                            // Subdivided boxGeometry to support clean surface displacement mapping
+                            <boxGeometry args={[m.w, m.h, m.d, 15, 15, 15]} />
+                        )}
+                        <meshStandardMaterial {...concreteProps} />
+                    </mesh>
+                )
+            })}
         </group>
     )
 }
-
-const PLACEMENTS = [
-    // Near Ring (20m - 40m)
-    { type: 'joshua', x: -35, z: -10, s: 1.1 }, { type: 'joshua', x: 38, z: -5, s: 1.3 },
-    { type: 'joshua', x: 10, z: -38, s: 1.0 }, { type: 'joshua', x: -12, z: 40, s: 1.4 },
-    { type: 'joshua', x: 35, z: 25, s: 0.9 }, { type: 'joshua', x: -38, z: 25, s: 1.2 },
-    { type: 'joshua', x: 20, z: 35, s: 1.1 }, { type: 'joshua', x: -25, z: -35, s: 1.3 },
-
-    // Medium Ring (40m - 60m)
-    { type: 'joshua', x: -55, z: -50, s: 1.3 }, { type: 'joshua', x: 60, z: -45, s: 1.5 },
-    { type: 'joshua', x: -65, z: 30, s: 1.1 }, { type: 'joshua', x: 70, z: 50, s: 1.4 },
-    { type: 'joshua', x: 80, z: -20, s: 1.2 }, { type: 'joshua', x: -75, z: 15, s: 1.0 },
-    { type: 'joshua', x: -50, z: 55, s: 1.3 }, { type: 'joshua', x: 55, z: -55, s: 1.1 },
-
-    // Far (60m+)
-    { type: 'joshua', x: -90, z: -80, s: 1.6 }, { type: 'joshua', x: 95, z: 85, s: 1.5 },
-    { type: 'joshua', x: -110, z: 40, s: 1.4 }, { type: 'joshua', x: 105, z: -45, s: 1.3 },
-]
 
 export default function ExteriorScene() {
+    // Load Concrete044D weathered concrete textures for the platform and monoliths/debris
+    const [
+        concreteColor,
+        concreteNormal,
+        concreteRoughness,
+        concreteMetalness,
+        concreteDisplacement,
+        concreteAO,
+    ] = useLoader(TextureLoader, CONCRETE044_MAPS)
+
+    // Build weathered concrete material properties for the platform pad
+    // We clone the textures to ensure distinct repeat parameters for the pad
+    const padProps = useMemo(() => {
+        const cColor = concreteColor.clone()
+        const cNormal = concreteNormal.clone()
+        const cRoughness = concreteRoughness.clone()
+        const cMetalness = concreteMetalness.clone()
+        const cDisplacement = concreteDisplacement.clone()
+        const cAO = concreteAO.clone()
+
+        ;[cColor, cNormal, cRoughness, cMetalness, cDisplacement, cAO].forEach((t) => {
+            t.wrapS = t.wrapT = RepeatWrapping
+            t.repeat.set(4, 4) // Tile 4x4 across the 28x28m platform for high resolution detail
+            t.anisotropy = 16
+        })
+        cColor.colorSpace = THREE.SRGBColorSpace
+
+        return {
+            color: '#7a7670',
+            map: cColor,
+            normalMap: cNormal,
+            normalScale: new THREE.Vector2(1.5, 1.5),
+            roughnessMap: cRoughness,
+            roughness: 0.82,
+            metalnessMap: cMetalness,
+            metalness: 0.05,
+            aoMap: cAO,
+            aoMapIntensity: 1.0,
+            displacementMap: cDisplacement,
+            displacementScale: 0.04, // Beautiful subtle displacement for the concrete platform
+            displacementBias: -0.02,
+        }
+    }, [concreteColor, concreteNormal, concreteRoughness, concreteMetalness, concreteAO, concreteDisplacement])
+
     return (
         <group>
             <SandTerrain />
-            <mesh receiveShadow position={[0.4, -0.06, 4.5]}>
-                <boxGeometry args={[28, 0.18, 28]} />
-                <meshStandardMaterial color="#9a9490" roughness={0.78} />
+            {/* The outside concrete platform pad - subdivided and textured with displacement */}
+            <mesh receiveShadow position={[0.4, -0.06, 4.5]} castShadow>
+                <boxGeometry args={[28, 0.18, 28, 100, 2, 100]} />
+                <meshStandardMaterial {...padProps} />
             </mesh>
-
-            {PLACEMENTS.map((p, i) => (
-                <AlignedObject key={i} x={p.x} z={p.z}>
-                    <JoshuaTree scale={p.s} rotY={Math.random() * 6} />
-                </AlignedObject>
-            ))}
-
-            {MOUNTAIN_SPECS.map((m, i) => (
-                <Mountain key={i} {...m} />
-            ))}
+            <ScenicMonoliths loadedTextures={{ concreteColor, concreteNormal, concreteRoughness, concreteMetalness, concreteDisplacement, concreteAO }} />
         </group>
     )
 }

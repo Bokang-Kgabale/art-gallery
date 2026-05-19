@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState } from 'react'
+import { useRef, useCallback, useState, Suspense } from 'react'
 import { Canvas, useFrame, useLoader } from '@react-three/fiber'
 import { Environment } from '@react-three/drei'
 import { TextureLoader } from 'three'
@@ -84,9 +84,9 @@ function InspectorFrameGilt({ accent }) {
 
 // ─── 3-D artwork mesh ─────────────────────────────────────────────────────────
 function ArtworkMesh({ imageUrl, rotationRef, frameStyle, frameAccent }) {
-    const meshRef   = useRef()
-    const groupRef  = useRef()
-    const texture   = useLoader(TextureLoader, imageUrl)
+    const meshRef = useRef()
+    const groupRef = useRef()
+    const texture = useLoader(TextureLoader, imageUrl)
 
     const smoothRot = useRef({ x: 0, y: 0 })
 
@@ -100,9 +100,9 @@ function ArtworkMesh({ imageUrl, rotationRef, frameStyle, frameAccent }) {
     })
 
     const FrameComp = {
-        'minimal':     InspectorFrameMinimal,
-        'float':       InspectorFrameFloat,
-        'gilt':        InspectorFrameGilt,
+        'minimal': InspectorFrameMinimal,
+        'float': InspectorFrameFloat,
+        'gilt': InspectorFrameGilt,
         'dark-ornate': InspectorFrameDarkOrnate,
     }[frameStyle] ?? InspectorFrameDarkOrnate
 
@@ -131,26 +131,26 @@ function ArtworkMesh({ imageUrl, rotationRef, frameStyle, frameAccent }) {
 
 // ─── Motion variants ──────────────────────────────────────────────────────────
 const backdropVars = {
-    hidden:  { opacity: 0 },
+    hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { duration: 0.45 } },
-    exit:    { opacity: 0, transition: { duration: 0.3 } },
+    exit: { opacity: 0, transition: { duration: 0.3 } },
 }
 const canvasVars = {
-    hidden:  { opacity: 0, scale: 0.88, y: 28 },
+    hidden: { opacity: 0, scale: 0.88, y: 28 },
     visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } },
-    exit:    { opacity: 0, scale: 0.9,  y: 20, transition: { duration: 0.3, ease: 'easeIn' } },
+    exit: { opacity: 0, scale: 0.9, y: 20, transition: { duration: 0.3, ease: 'easeIn' } },
 }
 const infoVars = {
-    hidden:  { opacity: 0, x: 55 },
-    visible: { opacity: 1, x: 0,  transition: { duration: 0.5, ease: [0.22,1,0.36,1], delay: 0.12, staggerChildren: 0.07, when: 'beforeChildren' } },
-    exit:    { opacity: 0, x: 40, transition: { duration: 0.28 } },
+    hidden: { opacity: 0, x: 55 },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.12, staggerChildren: 0.07, when: 'beforeChildren' } },
+    exit: { opacity: 0, x: 40, transition: { duration: 0.28 } },
 }
 const rowVars = {
-    hidden:  { opacity: 0, y: 12 },
-    visible: { opacity: 1, y: 0,  transition: { duration: 0.32, ease: 'easeOut' } },
+    hidden: { opacity: 0, y: 12 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.32, ease: 'easeOut' } },
 }
 const hintVars = {
-    hidden:  { opacity: 0 },
+    hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { duration: 0.5, delay: 0.6 } },
 }
 
@@ -171,7 +171,7 @@ const btnBase = {
 
 // ─── Main Inspector ───────────────────────────────────────────────────────────
 export default function ArtworkInspector() {
-    const artwork     = useGalleryStore((s) => s.selectedArtwork)
+    const artwork = useGalleryStore((s) => s.selectedArtwork)
     const clearArtwork = useGalleryStore((s) => s.clearArtwork)
 
     // rotation target driven by drag (only when freelook is on)
@@ -189,8 +189,8 @@ export default function ArtworkInspector() {
     }
 
     // ── Drag handlers (only active in free-look mode) ─────────────────────────
-    const isDragging   = useRef(false)
-    const lastPointer  = useRef({ x: 0, y: 0 })
+    const isDragging = useRef(false)
+    const lastPointer = useRef({ x: 0, y: 0 })
     const [dragging, setDragging] = useState(false)
 
     const onPointerDown = useCallback((e) => {
@@ -209,7 +209,7 @@ export default function ArtworkInspector() {
 
         rotationRef.current.y += dx * 0.010
         rotationRef.current.x += dy * 0.010
-        rotationRef.current.x  = THREE.MathUtils.clamp(rotationRef.current.x, -Math.PI / 2.4, Math.PI / 2.4)
+        rotationRef.current.x = THREE.MathUtils.clamp(rotationRef.current.x, -Math.PI / 2.4, Math.PI / 2.4)
     }, [freeLook])
 
     const onPointerUp = useCallback(() => {
@@ -256,13 +256,15 @@ export default function ArtworkInspector() {
                                 gl={{ antialias: true, alpha: false }}
                                 style={{ background: '#0a0908' }}
                             >
-                                <Environment preset="studio" background={false} />
-                                <ArtworkMesh 
-                                    imageUrl={artwork.image} 
-                                    rotationRef={rotationRef} 
-                                    frameStyle={artwork.frameStyle}
-                                    frameAccent={artwork.frameAccent}
-                                />
+                                <Suspense fallback={null}>
+                                    <Environment preset="studio" background={false} />
+                                    <ArtworkMesh
+                                        imageUrl={artwork.image}
+                                        rotationRef={rotationRef}
+                                        frameStyle={artwork.frameStyle}
+                                        frameAccent={artwork.frameAccent}
+                                    />
+                                </Suspense>
                             </Canvas>
                         </motion.div>
 

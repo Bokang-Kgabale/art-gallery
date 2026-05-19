@@ -60,12 +60,12 @@ export function useConcreteMaterial(texturePath = '/textures/concrete/') {
       `${texturePath}Concrete_Displacement.png`,
     ])
 
-    // Configure textures
-    ;[color, normal, roughness, displacement].forEach((texture) => {
-      texture.wrapS = RepeatWrapping
-      texture.wrapT = RepeatWrapping
-      texture.repeat.set(2, 2)
-    })
+      // Configure textures
+      ;[color, normal, roughness, displacement].forEach((texture) => {
+        texture.wrapS = RepeatWrapping
+        texture.wrapT = RepeatWrapping
+        texture.repeat.set(2, 2)
+      })
 
     return {
       map: color,
@@ -94,12 +94,12 @@ export function useMetalMaterial(texturePath = '/textures/metal/') {
       `${texturePath}Metal_Metallic.png`,
     ])
 
-    // Configure textures
-    ;[color, normal, roughness, metallic].forEach((texture) => {
-      texture.wrapS = RepeatWrapping
-      texture.wrapT = RepeatWrapping
-      texture.repeat.set(4, 4)
-    })
+      // Configure textures
+      ;[color, normal, roughness, metallic].forEach((texture) => {
+        texture.wrapS = RepeatWrapping
+        texture.wrapT = RepeatWrapping
+        texture.repeat.set(4, 4)
+      })
 
     return {
       map: color,

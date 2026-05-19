@@ -1,10 +1,10 @@
-import { useState, useRef } from 'react'
-import { useLoader, useFrame } from '@react-three/fiber'
+import { useState, useRef, Suspense } from 'react'
+import { useLoader, useFrame, useThree } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
 import { TextureLoader } from 'three'
 import * as THREE from 'three'
 import useGalleryStore from '../store/useGalleryStore'
-
+import ArtErrorBoundary from './ArtErrorBoundary'
 // ─── Gallery Scene root offset (must match GalleryScene.jsx group position) ───
 const SCENE_OFFSET = [-10, 0, -9]
 
@@ -14,6 +14,7 @@ const WALL_ROTATIONS = {
   right:  [0, -Math.PI / 2, 0],
   top:    [0, Math.PI, 0],
   left:   [0,  Math.PI / 2, 0],
+  angled: [0, -3 * Math.PI / 4, 0],
 }
 
 const DOLLY_DIR = {
@@ -21,6 +22,7 @@ const DOLLY_DIR = {
   right:  [-1, 0, 0],
   top:    [0, 0, -1],
   left:   [1, 0,  0],
+  angled: [-0.7071, 0, -0.7071],
 }
 
 // ─── FRAME STYLES ─────────────────────────────────────────────────────────────
@@ -42,7 +44,7 @@ function FrameDarkOrnate({ W, H, accent, isSelected }) {
         <meshStandardMaterial color={goldColor} roughness={0.18} metalness={0.92} envMapIntensity={2.5} />
       </mesh>
       {/* Inner dark rebate — creates shadow depth */}
-      <mesh position={[0, 0, -0.022]}>
+      <mesh position={[0, 0, -0.035]}>
         <boxGeometry args={[W + 0.04, H + 0.04, 0.06]} />
         <meshStandardMaterial color="#060504" roughness={0.7} metalness={0.1} />
       </mesh>
@@ -139,7 +141,7 @@ function FrameGilt({ W, H, accent, isSelected }) {
         <meshStandardMaterial color="#1a1208" roughness={0.6} metalness={0.2} />
       </mesh>
       {/* Cream linen mat */}
-      <mesh position={[0, 0, -0.015]}>
+      <mesh position={[0, 0, -0.016]}>
         <boxGeometry args={[W + 0.08, H + 0.08, 0.03]} />
         <meshStandardMaterial color="#f0ebe0" roughness={0.92} metalness={0.0} />
       </mesh>
@@ -201,6 +203,39 @@ function ArtLabel({ title, artist, year, medium, frameH, frameStyle }) {
   )
 }
 
+// ─── Artwork Canvas Loader ──────────────────────────────────────────────────────
+function GalleryArtCanvas({ artwork, W, H, frameStyle, meshRef, setHovered, handleClick }) {
+  const texture = useLoader(TextureLoader, artwork.image)
+  return (
+    <mesh
+      ref={meshRef}
+      castShadow
+      receiveShadow
+      onPointerOver={(e) => {
+        e.stopPropagation()
+        setHovered(true)
+        document.body.style.cursor = 'pointer'
+      }}
+      onPointerOut={(e) => {
+        e.stopPropagation()
+        setHovered(false)
+        document.body.style.cursor = 'default'
+      }}
+      onClick={handleClick}
+    >
+      <planeGeometry args={[W, H]} />
+      <meshStandardMaterial
+        map={texture}
+        roughness={frameStyle === 'float' ? 0.3 : 0.5}
+        metalness={0.04}
+        emissive="#ffffff"
+        emissiveIntensity={0.0}
+        emissiveMap={texture}
+      />
+    </mesh>
+  )
+}
+
 // ─── Main GalleryArt ──────────────────────────────────────────────────────────
 export default function GalleryArt({ artwork }) {
   const [hovered, setHovered] = useState(false)
@@ -220,8 +255,6 @@ export default function GalleryArt({ artwork }) {
   // Canvas size is full W × H — frame components draw around the outside
   const rotation = WALL_ROTATIONS[artwork.wall] ?? [0, 0, 0]
   const dolly    = DOLLY_DIR[artwork.wall]      ?? [0, 0, 1]
-
-  const texture = useLoader(TextureLoader, artwork.image)
 
   // ─── Per-frame spotlight color ─────────────────────────────────────────────
   const lightColor = frameStyle === 'float'
@@ -250,6 +283,8 @@ export default function GalleryArt({ artwork }) {
     }
   })
 
+  const { camera } = useThree()
+
   // ─── Click ─────────────────────────────────────────────────────────────────
   const handleClick = (e) => {
     e.stopPropagation()
@@ -264,7 +299,14 @@ export default function GalleryArt({ artwork }) {
       1.65,
       worldPos[2] + dolly[2] * D,
     ]
-    selectArtwork(artwork, camPos, worldPos)
+    
+    // Save current camera state so we can return exactly where we were
+    const currentPos = camera.position.toArray()
+    const dir = new THREE.Vector3()
+    camera.getWorldDirection(dir)
+    const currentLook = camera.position.clone().add(dir.multiplyScalar(0.1)).toArray()
+
+    selectArtwork(artwork, camPos, worldPos, currentPos, currentLook)
   }
 
   return (
@@ -274,32 +316,24 @@ export default function GalleryArt({ artwork }) {
       <ArtFrame style={frameStyle} W={W} H={H} accent={frameAccent} isSelected={isSelected} />
 
       {/* ── Artwork canvas ── */}
-      <mesh
-        ref={meshRef}
-        castShadow
-        receiveShadow
-        onPointerOver={(e) => {
-          e.stopPropagation()
-          setHovered(true)
-          document.body.style.cursor = 'pointer'
-        }}
-        onPointerOut={(e) => {
-          e.stopPropagation()
-          setHovered(false)
-          document.body.style.cursor = 'default'
-        }}
-        onClick={handleClick}
-      >
-        <planeGeometry args={[W, H]} />
-        <meshStandardMaterial
-          map={texture}
-          roughness={frameStyle === 'float' ? 0.3 : 0.5}
-          metalness={0.04}
-          emissive="#ffffff"
-          emissiveIntensity={0.0}
-          emissiveMap={texture}
-        />
-      </mesh>
+      <ArtErrorBoundary width={W} height={H} fallbackName={artwork.title}>
+        <Suspense fallback={
+          <mesh>
+            <planeGeometry args={[W, H]} />
+            <meshStandardMaterial color="#1a1a1a" roughness={0.9} />
+          </mesh>
+        }>
+          <GalleryArtCanvas
+            artwork={artwork}
+            W={W}
+            H={H}
+            frameStyle={frameStyle}
+            meshRef={meshRef}
+            setHovered={setHovered}
+            handleClick={handleClick}
+          />
+        </Suspense>
+      </ArtErrorBoundary>
 
       {/* ── Metadata label ── */}
       <ArtLabel
@@ -311,18 +345,84 @@ export default function GalleryArt({ artwork }) {
         frameStyle={frameStyle}
       />
 
-      {/* ── Spotlight ── */}
-      <spotLight
-        ref={lightRef}
-        position={[0, H * 0.75 + 0.6, 0.9]}
-        intensity={2.8}
-        angle={Math.PI / 7}
-        penumbra={0.6}
-        decay={1.5}
-        distance={H * 2 + 4}
-        castShadow={false}
-        color={lightColor}
-      />
+      {/* ── Spotlight Track and Canister Assembly ── */}
+      {(() => {
+        const yRod = H * 0.75 + 0.6
+        const yPivot = yRod - 0.1
+        const rotX = Math.atan2(-0.9, -yPivot)
+        return (
+          <group>
+            {/* 1. Wall-mounted support plate */}
+            <mesh position={[0, yRod, -0.18]} castShadow receiveShadow>
+              <boxGeometry args={[0.12, 0.12, 0.03]} />
+              <meshStandardMaterial color="#1f1d1c" roughness={0.65} metalness={0.7} />
+            </mesh>
+
+            {/* 2. Horizontal support rod extending from wall to spotlight axis */}
+            <mesh position={[0, yRod, 0.36]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+              <cylinderGeometry args={[0.015, 0.015, 1.08, 12]} />
+              <meshStandardMaterial color="#403c39" roughness={0.3} metalness={0.85} />
+            </mesh>
+
+            {/* 3. Sliding mount/track connector */}
+            <mesh position={[0, yRod, 0.9]} castShadow>
+              <boxGeometry args={[0.06, 0.06, 0.06]} />
+              <meshStandardMaterial color="#1a1817" roughness={0.7} metalness={0.6} />
+            </mesh>
+
+            {/* 4. Vertical drop connector */}
+            <mesh position={[0, yRod - 0.05, 0.9]} castShadow>
+              <cylinderGeometry args={[0.008, 0.008, 0.1, 8]} />
+              <meshStandardMaterial color="#2c2927" roughness={0.5} metalness={0.8} />
+            </mesh>
+
+            {/* 5. Swivel Joint / Hinge */}
+            <mesh position={[0, yPivot, 0.9]} rotation={[0, 0, Math.PI / 2]} castShadow>
+              <cylinderGeometry args={[0.015, 0.015, 0.04, 12]} />
+              <meshStandardMaterial color="#1a1817" roughness={0.5} metalness={0.7} />
+            </mesh>
+
+            {/* 6. Rotated Canister & Glowing Lens */}
+            <group position={[0, yPivot, 0.9]} rotation={[rotX, 0, 0]}>
+              {/* Canister Body */}
+              <mesh position={[0, -0.09, 0]} castShadow>
+                <cylinderGeometry args={[0.045, 0.045, 0.18, 16]} />
+                <meshStandardMaterial color="#1f1d1c" roughness={0.4} metalness={0.8} />
+              </mesh>
+
+              {/* Canister Front Bezel / Lip */}
+              <mesh position={[0, -0.181, 0]}>
+                <cylinderGeometry args={[0.044, 0.044, 0.005, 16]} />
+                <meshStandardMaterial color="#0a0908" roughness={0.8} />
+              </mesh>
+
+              {/* Glowing Technical Lens */}
+              <mesh position={[0, -0.183, 0]}>
+                <cylinderGeometry args={[0.038, 0.038, 0.002, 16]} />
+                <meshStandardMaterial
+                  color={lightColor}
+                  emissive={lightColor}
+                  emissiveIntensity={isSelected ? 6.0 : hovered ? 4.5 : 2.5}
+                  roughness={0.15}
+                />
+              </mesh>
+            </group>
+
+            {/* ── Actual Spotlight source, placed at the pivot and pointing at the artwork ── */}
+            <spotLight
+              ref={lightRef}
+              position={[0, yPivot, 0.9]}
+              intensity={2.8}
+              angle={Math.PI / 7}
+              penumbra={0.6}
+              decay={1.5}
+              distance={H * 2 + 4}
+              castShadow={false}
+              color={lightColor}
+            />
+          </group>
+        )
+      })()}
     </group>
   )
 }

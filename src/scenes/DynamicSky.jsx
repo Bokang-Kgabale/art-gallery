@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Sky, Stars, Clouds, Cloud } from '@react-three/drei'
 import * as THREE from 'three'
+import useGalleryStore from '../store/useGalleryStore'
 
 /**
  * DynamicSky
@@ -9,21 +10,27 @@ import * as THREE from 'three'
  * Drives the Drei <Sky> shader + a directional sun light that sweeps
  * across the sky. Shadow direction updates every frame, creating
  * naturally moving shadows across the sand and building.
- *
- * Props:
- *   timeScale  — simulation speed multiplier (default 40)
- *   startHour  — starting hour 0–24 (default 9 = mid-morning)
  */
-export default function DynamicSky({ timeScale = 40, startHour = 9 }) {
+export default function DynamicSky() {
     const lightRef = useRef()
     const starsRef = useRef()
     const cloudsRef = useRef()
 
+    const timeOfDay = useGalleryStore((s) => s.timeOfDay)
+    const timeScale = useGalleryStore((s) => s.timeScale)
+    const isTimePaused = useGalleryStore((s) => s.isTimePaused)
+    const setTimeOfDay = useGalleryStore((s) => s.setTimeOfDay)
+
+    // Azimuth offset — door on Wall A faces +Z (toward the camera at z=+18).
+    // -π/2 shifts sunrise to +Z so at 6am the sun is directly in front of the door,
+    // beaming low morning light straight through the opening into the interior.
+    const AZ_OFFSET = -Math.PI / 2
+
     // Drei Sky accepts sunPosition as a prop array — we drive it via state
     const [sunPos, setSunPos] = useState(() => {
-        const t = startHour / 24
+        const t = timeOfDay / 24
         const el = Math.sin(t * Math.PI * 2 - Math.PI / 2)
-        const az = t * Math.PI * 2
+        const az = t * Math.PI * 2 + AZ_OFFSET
         const cosEl = Math.cos(el)
         return [
             Math.sin(az) * cosEl,
@@ -32,15 +39,23 @@ export default function DynamicSky({ timeScale = 40, startHour = 9 }) {
         ]
     })
 
-    const hour = useRef(startHour)
+    const hour = useRef(timeOfDay)
+    const lastTime = useRef(timeOfDay)
 
     useFrame((_, delta) => {
-        // Advance simulated time
-        hour.current = (hour.current + (delta * timeScale) / 3600) % 24
+        // Bi-directional sync: slider overrides local clock, clock advances slider
+        if (Math.abs(timeOfDay - lastTime.current) > 0.005) {
+            hour.current = timeOfDay
+            lastTime.current = timeOfDay
+        } else if (!isTimePaused) {
+            hour.current = (hour.current + (delta * timeScale) / 3600) % 24
+            lastTime.current = hour.current
+            setTimeOfDay(hour.current)
+        }
 
         const t = hour.current / 24
         const el = Math.sin(t * Math.PI * 2 - Math.PI / 2)
-        const az = t * Math.PI * 2
+        const az = t * Math.PI * 2 + AZ_OFFSET
         const cosEl = Math.cos(el)
 
         const x = Math.sin(az) * cosEl
@@ -65,14 +80,16 @@ export default function DynamicSky({ timeScale = 40, startHour = 9 }) {
             lightRef.current.target.position.set(0, 0, 0)
             lightRef.current.target.updateMatrixWorld()
 
-            // Brightness — smoothly ramps up from horizon, peaks at zenith
+            // Brightness — smoothly ramps up from horizon, peaks at zenith.
+            // Boosted to 4.5 so low-angle morning light floods the interior through the door.
             const sunHeight = Math.max(y, 0)
             const brightness = THREE.MathUtils.smoothstep(sunHeight, 0.0, 0.18)
-            lightRef.current.intensity = brightness * 3.0
+            lightRef.current.intensity = brightness * 4.5
 
-            // Warm orange at sunrise/sunset, neutral white at high noon
-            const warmth = 1 - Math.min(sunHeight * 5, 1)
-            lightRef.current.color.setRGB(1.0, 1.0 - warmth * 0.28, 1.0 - warmth * 0.55)
+            // Golden hour: warm orange near horizon, fades to neutral by mid-morning.
+            // Using sunHeight * 3 (was *5) extends the golden window through ~7-8am.
+            const warmth = 1 - Math.min(sunHeight * 3, 1)
+            lightRef.current.color.setRGB(1.0, 1.0 - warmth * 0.38, 1.0 - warmth * 0.68)
         }
 
         // Fade stars in during night, hide during day

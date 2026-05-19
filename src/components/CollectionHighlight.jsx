@@ -22,7 +22,7 @@ import * as THREE from 'three'
  */
 export default function CollectionHighlight({
   title = '051 Scarecrow Series',
-  subtitle = 'Digital Art — Triptych',
+  subtitle = 'Digital Art - Exhibition',
   position = [0, 0, 0],
   rotation = [0, 0, 0],
   ringCount = 3,

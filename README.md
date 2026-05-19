@@ -1,52 +1,51 @@
-# 3D Virtual Art Gallery
+# The Brutalist Gallery 🏛️
 
-An immersive, interactive 3D art gallery built with React Three Fiber that allows visitors to explore a virtual exhibition space and view artwork in a realistic environment.
+An immersive, interactive 3D virtual art gallery built with React Three Fiber and Three.js. The gallery hosts the digital and physical portfolio of B. Kgabale, combining brutalist concrete architecture, realistic physically-based rendering (PBR) materials, and cinematic lighting.
 
-## Features
+---
 
-### Interactive 3D Environment
-- Fully enclosed gallery room with realistic proportions
-- Physically-based rendering (PBR) materials for realistic lighting
-- Curated gallery layout with dedicated hang zones
+## 🌟 Key Features
 
-### Advanced Framing & Display System
-- **Multi-Style Framing**: Support for various frame styles to match the artwork medium:
-  - `dark-ornate`: Matte black box with recessed gold bevel (e.g., for classic or dark pieces)
-  - `minimal`: Brushed steel thin-bar frames (e.g., for graphite/charcoal)
-  - `float`: Frameless with LED-emissive edges matching specific accent colors (e.g., for digital art)
-  - `gilt`: Gold leaf with cream linen mat (e.g., for watercolours)
-- **Dynamic Lighting**: Spotlights are subtly tinted to match individual frame accent colors.
+### 🏛️ Interactive 3D Brutalist Environment
+- **Monolithic Concrete Architecture**: Heavy slabs, columns, and raw textures rendered using high-detail PBR materials.
+- **Natural Light Cycle**: Aligned morning sunlight path entering through the skylight and main entrance, casting dramatic, long shadows across the concrete gallery floor.
+- **Warm Spotlight Washes**: Premium architectural spotlights with colored tints matched to each artwork's frame style to highlight canvas textures and depth.
 
-### Artwork Inspection
-- Click on any artwork to open the **Artwork Inspector**
-- View high-resolution 3D models of the artwork with matching frames
-- Detailed information cards (title, artist, year, medium, description)
-- 3D orbit controls to examine the framing and texture closely
+### 🖼️ Advanced Framing System
+Each portfolio piece is assigned a unique frame style tailored to its medium and aesthetic:
+- **`dark-ornate`**: Matte black deep frame with a gold bevel edge, perfect for classic and high-contrast digital art.
+- **`minimal`**: Sleek, thin brushed steel frame with realistic reflection properties, designed for graphite and charcoal work.
+- **`float`**: Frameless display with back-lit, neon LED glow matching the artwork's accent color, designed for futuristic digital art.
+- **`gilt`**: Rich gold leaf frame with a textured cream linen mat, bringing watercolours to life.
 
-### Navigation Controls
-- **Mouse**: Click and drag to look around
-- **W/A/S/D or Arrow Keys**: Move through the gallery
-- **Scroll**: Zoom in and out
-- **Click on artwork**: Open the Artwork Inspector
-- **ESC or X button**: Close the inspector
+### 🔍 Cinematic Artwork Inspector
+- **Isolated Studio Viewport**: Renders the selected artwork in a dedicated 3D canvas using the `"studio"` environment map for professional lighting.
+- **Free-Look Orbit Controls**: Click **⊕ ROTATE** to unlock camera rotation, enabling visitors to drag, spin, and inspect the physical frame thickness, linen mat, and bevels.
+- **Automatic State Reset**: Re-locking or closing the inspector automatically repositions the camera and resets rotation.
+- **Suspense & Error Protection**: Native React `<Suspense>` boundaries prevent render crashes when fetching uncached textures and environmental assets.
 
-## Technical Stack
+---
 
-- **Frontend**: React (ES6+)
-- **3D Engine**: Three.js & React Three Fiber (`@react-three/fiber`, `@react-three/drei`)
+## 🛠️ Technical Stack
+
+- **Framework**: React (ES6+)
+- **3D Graphics**: Three.js & React Three Fiber (`@react-three/fiber`, `@react-three/drei`)
 - **State Management**: Zustand
+- **Animation**: Framer Motion
 - **Build Tool**: Vite
-- **Data**: JSON-based portfolio configuration
+- **Styling**: Tailwind CSS & Custom CSS
 
-## Installation & Setup
+---
+
+## 🚀 Installation & Setup
 
 ### Prerequisites
-- Node.js (v16+)
-- npm or yarn
+- **Node.js**: Version 16.x or newer
+- **npm** or **yarn**
 
 ### Quick Start
 
-1. **Clone or download this repository**
+1. **Clone the repository**
    ```bash
    git clone <repository-url>
    cd art+gallery
@@ -57,67 +56,64 @@ An immersive, interactive 3D art gallery built with React Three Fiber that allow
    npm install
    ```
 
-3. **Start the development server**
+3. **Start the local development server**
    ```bash
    npm run dev
    ```
 
-4. **Open in browser**
-   - Navigate to `http://localhost:5173` (or the port shown by Vite)
+4. **Open in your browser**
+   - Access the site at `http://localhost:5173` (or the port indicated in your console output).
 
-## Customization
+---
 
-### Adding More Artworks
-Edit the `src/data/portfolio.json` file to add or modify artworks. Each entry supports detailed metadata, including custom frame styles:
+## 🎨 Customization & Portfolio Management
+
+### Adding and Modifying Artworks
+The gallery dynamically renders all pieces defined in `src/data/portfolio.json`. You can easily add or edit artworks:
 
 ```json
 {
-  "id": "new-artwork",
-  "title": "Your Artwork Title",
-  "artist": "Artist Name",
-  "year": "2024",
-  "medium": "Digital",
-  "description": "Artwork description...",
-  "image": "/assets/art/your-image.jpg",
-  "wall": "Left",
-  "position": [-5, 2, -2],
-  "scale": [2, 3],
-  "frameStyle": "float",
-  "frameAccent": "#ff0000"
+  "id": "moms-request",
+  "title": "Mom's Request",
+  "artist": "B. Kgabale",
+  "year": "2025",
+  "medium": "Digital Watercolour",
+  "description": "Made at the request of the artist's mother. A tender piece...",
+  "image": "/assets/Mom_s_Request.jpeg",
+  "wall": "bottom",
+  "localPos": [4.8, 2.0, 0.28],
+  "width": 2.4,
+  "height": 2.8,
+  "collection": null,
+  "frameStyle": "gilt",
+  "frameAccent": "#c8a040"
 }
 ```
 
-### Supported Frame Styles
-- `dark-ornate`
-- `minimal`
-- `float`
-- `gilt`
+### Frame Properties
+- `frameStyle`: Choose from `dark-ornate`, `minimal`, `float`, or `gilt`.
+- `frameAccent`: Hex color code for the emissive glow or frame reflection highlights.
 
-## Project Structure
+---
+
+## 📁 Project Structure
 
 ```text
 art+gallery/
 ├── public/
-│   └── assets/           # Artwork images and textures
+│   └── assets/           # High-resolution artwork textures and image assets
 ├── src/
-│   ├── components/       # React Three Fiber components (GalleryArt, Lighting, etc.)
-│   ├── data/             # JSON configuration files (portfolio.json)
-│   ├── store/            # Zustand state management
-│   ├── ui/               # 2D UI overlays and Artwork Inspector
-│   ├── App.jsx           # Main application component
-│   └── main.jsx          # React entry point
-└── package.json          # Dependencies and scripts
+│   ├── components/       # R3F scene components (GalleryScene, GalleryArt, Floor, etc.)
+│   ├── data/             # JSON configs (portfolio.json defining artwork locations)
+│   ├── store/            # Zustand global state (camera positions, selection states)
+│   ├── ui/               # 2D overlays, HUD, and the ArtworkInspector panel
+│   ├── App.jsx           # Main application entry canvas
+│   └── main.jsx          # React app DOM mounting point
+├── package.json          # Dependencies & scripts
+└── README.md             # Project documentation
 ```
 
-## Known Limitations
-- No mobile touch controls (desktop navigation prioritized)
-- High-resolution textures may require optimization for lower-end devices
+---
 
-## Future Enhancements
-- [ ] Mobile touch controls and joystick navigation
-- [ ] VR mode with WebXR support
-- [ ] Multiple gallery rooms and dynamic routing
-- [ ] Audio tour integration
-
-## License
-This project is open source and available under the MIT License.
+## 📝 License
+This project is open-source and licensed under the [MIT License](LICENSE).
