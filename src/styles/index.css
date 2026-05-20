@@ -14,3 +14,141 @@ body {
   width: 100vw;
   height: 100vh;
 }
+
+:root {
+  /* Loader Sizing */
+  --loader-padding: 40px;
+  --loader-margin: 20px;
+  --blueprint-display: flex;
+  --blueprint-max-height: 230px;
+  --console-display: flex;
+  --console-margin: 22px;
+  --stats-margin: 22px;
+  --action-min-height: 68px;
+  --action-padding-top: 20px;
+  --enter-button-padding: 12px 36px;
+  --enter-button-font-size: 11px;
+
+  /* Panels Sizing */
+  --panel-top: clamp(20px, 3vh, 28px);
+  --panel-right: clamp(16px, 2.5vw, 28px);
+  --panel-left: clamp(16px, 2.5vw, 28px);
+  --panel-width: clamp(200px, 22vw, 260px);
+  --panel-header-font-size: clamp(11.5px, 0.8vw + 0.4vh, 13px);
+  --panel-header-padding: clamp(8px, 1vh, 10px) clamp(12px, 1.2vw, 14px);
+  --panel-content-gap: clamp(6px, 0.8vh, 10px);
+  --panel-card-padding: clamp(12px, 1.5vh, 16px);
+  --panel-card-gap: clamp(8px, 1.2vh, 12px);
+  --panel-time-font-size: clamp(16px, 1.5vw + 0.5vh, 20px);
+  --panel-stage-font-size: clamp(10px, 0.8vw + 0.3vh, 12px);
+  --panel-stage-gap: clamp(4px, 0.5vw, 6px);
+  --panel-stage-icon-size: clamp(11px, 1.2vw, 14px);
+  
+  --btn-padding: clamp(6px, 0.7vh, 8px) 0;
+  --btn-font-size: clamp(9.5px, 0.8vw + 0.3vh, 11px);
+  --btn-gap: clamp(4px, 0.5vw, 6px);
+  --btn-icon-size: clamp(10px, 1vw, 12px);
+  
+  --presets-header-font-size: clamp(11px, 0.8vw + 0.3vh, 13px);
+  --presets-gap: clamp(6px, 0.8vw, 10px);
+  --preset-btn-size: clamp(34px, 3.5vw, 42px);
+  --preset-icon-size: clamp(15px, 1.5vw, 18px);
+
+  /* Navigation Sizing */
+  --nav-header-width: clamp(150px, 16vw, 200px);
+  --nav-content-width: clamp(180px, 19vw, 228px);
+  --nav-subheader-font-size: clamp(10.5px, 0.8vw + 0.3vh, 12px);
+  --nav-btn-padding: clamp(6px, 0.7vh, 8px) clamp(12px, 1.2vw, 16px);
+  --nav-btn-font-size: clamp(10.5px, 0.9vw + 0.3vh, 13px);
+  --nav-btn-gap: clamp(6px, 0.7vw, 8px);
+  --nav-btn-icon-size: clamp(12px, 1.2vw, 14px);
+}
+
+/* Tablet / Medium Viewports */
+@media (max-width: 1024px) {
+  :root {
+    --panel-top: clamp(72px, 9vh, 84px); /* Pushes panels down below HIDE UI button level */
+    --panel-right: clamp(12px, 2vw, 20px);
+    --panel-left: clamp(12px, 2vw, 20px);
+    --panel-width: clamp(170px, 22vw, 220px);
+    --panel-header-font-size: clamp(10px, 0.8vw + 0.4vh, 11.5px);
+    --panel-header-padding: clamp(6px, 0.8vh, 8px) clamp(10px, 1vw, 12px);
+    --panel-card-padding: clamp(10px, 1.2vh, 12px);
+    --panel-time-font-size: clamp(14px, 1.5vw + 0.5vh, 17px);
+    --panel-stage-font-size: clamp(9px, 0.8vw + 0.3vh, 10.5px);
+    
+    --presets-header-font-size: clamp(10px, 0.8vw + 0.3vh, 11.5px);
+    --preset-btn-size: clamp(30px, 3.5vw, 36px);
+    --preset-icon-size: clamp(13px, 1.5vw, 16px);
+
+    --nav-header-width: clamp(120px, 15vw, 160px);
+    --nav-content-width: clamp(150px, 18vw, 190px);
+    --nav-subheader-font-size: clamp(9.5px, 0.8vw + 0.3vh, 11px);
+    --nav-btn-padding: clamp(5px, 0.6vh, 7px) clamp(10px, 1vw, 12px);
+    --nav-btn-font-size: clamp(9.5px, 0.9vw + 0.3vh, 11.5px);
+  }
+}
+
+/* Mobile Phones (Portrait) */
+@media (max-width: 600px) {
+  :root {
+    --loader-padding: clamp(16px, 4vw, 24px);
+    --loader-margin: clamp(10px, 3vh, 16px);
+    --blueprint-max-height: clamp(120px, 25vh, 180px);
+
+    --panel-top: clamp(68px, 8.5vh, 76px); /* Pushes panels down below HIDE UI button level */
+    --panel-right: clamp(8px, 1.5vw, 16px);
+    --panel-left: clamp(8px, 1.5vw, 16px);
+    --panel-width: clamp(150px, 25vw, 180px);
+    --panel-header-font-size: clamp(9px, 1.2vw + 0.3vh, 10px);
+    --panel-header-padding: clamp(5px, 0.7vh, 6px) clamp(8px, 1vw, 10px);
+    --panel-content-gap: clamp(4px, 0.6vh, 6px);
+    --panel-card-padding: clamp(8px, 1vh, 10px);
+    --panel-card-gap: clamp(6px, 0.8vh, 8px);
+    --panel-time-font-size: clamp(12px, 2vw, 14px);
+    --panel-stage-font-size: clamp(8.5px, 1.2vw, 9.5px);
+    --panel-stage-gap: clamp(3px, 0.5vw, 4px);
+    --panel-stage-icon-size: clamp(10px, 1.5vw, 11px);
+    
+    --btn-padding: clamp(4px, 0.6vh, 6px) 0;
+    --btn-font-size: clamp(8.5px, 1.2vw, 9.5px);
+    --btn-gap: clamp(3px, 0.5vw, 4px);
+    --btn-icon-size: clamp(9px, 1.5vw, 10px);
+    
+    --presets-header-font-size: clamp(9.5px, 1.2vw, 10px);
+    --presets-gap: clamp(4px, 1vw, 6px);
+    --preset-btn-size: clamp(28px, 4vw, 32px);
+    --preset-icon-size: clamp(12px, 1.8vw, 14px);
+
+    --nav-header-width: clamp(110px, 18vw, 130px);
+    --nav-content-width: clamp(130px, 22vw, 160px);
+    --nav-subheader-font-size: clamp(9px, 1.2vw, 9.8px);
+    --nav-btn-padding: clamp(5px, 0.6vh, 6px) clamp(8px, 1vw, 10px);
+    --nav-btn-font-size: clamp(9px, 1.2vw, 9.8px);
+    --nav-btn-gap: clamp(4px, 0.8vw, 6px);
+    --nav-btn-icon-size: clamp(10px, 1.5vw, 12px);
+  }
+}
+
+/* Low Vertical Height Viewports (Landscape Mobile / Small Screens) */
+@media (max-height: 520px) {
+  :root {
+    --panel-top: clamp(12px, 2.5vh, 20px); /* Return to top edge in landscape to save vertical scrolling space */
+    --loader-padding: 16px 24px;
+    --loader-margin: 10px;
+    --blueprint-max-height: 135px;
+    --console-display: none;
+    --console-margin: 0px;
+    --stats-margin: 10px;
+    --action-min-height: 48px;
+    --action-padding-top: 10px;
+    --enter-button-padding: 8px 24px;
+    --enter-button-font-size: 10px;
+  }
+}
+
+@media (max-height: 420px) {
+  :root {
+    --blueprint-display: none;
+  }
+}

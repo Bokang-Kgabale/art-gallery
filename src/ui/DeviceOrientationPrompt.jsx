@@ -1,20 +1,33 @@
 import { useEffect, useState } from 'react'
+import useGalleryStore from '../store/useGalleryStore'
+import { requestFullscreenAndLockOrientation } from '../utils/device'
 
 export default function DeviceOrientationPrompt() {
-  const [showPrompt, setShowPrompt] = useState(false)
+  const isMobile = useGalleryStore((s) => s.isMobile)
+  const [isPortrait, setIsPortrait] = useState(false)
 
   useEffect(() => {
     const checkOrientation = () => {
-      // Check if device is a touch screen (phone/tablet) and in portrait mode
-      const isMobile = window.matchMedia('(max-width: 1024px) and (hover: none)').matches
-      const isPortrait = window.matchMedia('(orientation: portrait)').matches
-      setShowPrompt(isMobile && isPortrait)
+      setIsPortrait(window.matchMedia('(orientation: portrait)').matches)
     }
 
     checkOrientation()
     window.addEventListener('resize', checkOrientation)
-    return () => window.removeEventListener('resize', checkOrientation)
+    window.addEventListener('orientationchange', checkOrientation)
+    if (window.screen && window.screen.orientation) {
+      window.screen.orientation.addEventListener('change', checkOrientation)
+    }
+
+    return () => {
+      window.removeEventListener('resize', checkOrientation)
+      window.removeEventListener('orientationchange', checkOrientation)
+      if (window.screen && window.screen.orientation) {
+        window.screen.orientation.removeEventListener('change', checkOrientation)
+      }
+    }
   }, [])
+
+  const showPrompt = isMobile && isPortrait
 
   if (!showPrompt) return null
 
@@ -54,9 +67,43 @@ export default function DeviceOrientationPrompt() {
         }} />
       </div>
       <h2 style={{ fontSize: 28, marginBottom: 16, fontWeight: 300, color: '#c8a96e', letterSpacing: '1px' }}>Please Rotate Device</h2>
-      <p style={{ fontSize: 16, lineHeight: 1.6, opacity: 0.8, maxWidth: 320, letterSpacing: '0.5px' }}>
+      <p style={{ fontSize: 16, lineHeight: 1.6, opacity: 0.8, maxWidth: 320, letterSpacing: '0.5px', marginBottom: 32 }}>
         For the best immersive experience, please enable auto-rotate and view this gallery in landscape mode.
       </p>
+
+      {/* Premium Lock Orientation Button */}
+      <button
+        onClick={requestFullscreenAndLockOrientation}
+        style={{
+          background: 'rgba(200, 169, 110, 0.95)',
+          border: '1px solid rgba(200, 169, 110, 1)',
+          color: '#0a090a',
+          padding: '12px 32px',
+          borderRadius: '30px',
+          fontSize: '11px',
+          fontWeight: '800',
+          letterSpacing: '2px',
+          textTransform: 'uppercase',
+          cursor: 'pointer',
+          boxShadow: '0 10px 30px rgba(200, 169, 110, 0.3)',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          outline: 'none',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = '#ffffff'
+          e.currentTarget.style.borderColor = '#ffffff'
+          e.currentTarget.style.boxShadow = '0 15px 40px rgba(255, 255, 255, 0.3)'
+          e.currentTarget.style.transform = 'translateY(-2px)'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'rgba(200, 169, 110, 0.95)'
+          e.currentTarget.style.borderColor = 'rgba(200, 169, 110, 1)'
+          e.currentTarget.style.boxShadow = '0 10px 30px rgba(200, 169, 110, 0.3)'
+          e.currentTarget.style.transform = 'translateY(0)'
+        }}
+      >
+        Lock to Landscape
+      </button>
 
       <style>{`
         @keyframes rotateDevice {

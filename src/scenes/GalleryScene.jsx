@@ -493,9 +493,14 @@ export default function GalleryScene() {
         <meshStandardMaterial {...concreteCMaterialProps} />
       </mesh>
 
-      {/* Wall C (angled 45°) - from (20,14) to (15,18) - RAISED HEIGHT */}
-      <mesh position={[17.5, 4.125, 16]} rotation={[0, -Math.PI / 4, 0]} receiveShadow castShadow>
-        <boxGeometry args={[7.2, 9.75, 0.45, 36, 50, 4]} />
+      {/* Wall C (angled) - perfectly connecting Wall B (20.225, 14.0) and Wall D (15.0, 18.225) */}
+      <mesh 
+        position={[17.6125, 4.125, 16.1125]} 
+        rotation={[0, -Math.atan2(4.225, 5.225), 0]} 
+        receiveShadow 
+        castShadow
+      >
+        <boxGeometry args={[Math.sqrt(5.225 * 5.225 + 4.225 * 4.225), 9.75, 0.45, 36, 50, 4]} />
         <meshStandardMaterial {...concreteCMaterialProps} />
       </mesh>
 

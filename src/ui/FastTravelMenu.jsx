@@ -4,8 +4,8 @@ import useGalleryStore from '../store/useGalleryStore'
 import { Compass, Footprints, MapPin, ChevronDown, ChevronUp } from 'lucide-react'
 
 export default function FastTravelMenu() {
+    const isMobile = useGalleryStore((s) => s.isMobile)
     const [collapsed, setCollapsed] = useState(false)
-    const [isMobile, setIsMobile] = useState(false)
     const fastTravel = useGalleryStore((s) => s.fastTravel)
     const selectedArtwork = useGalleryStore((s) => s.selectedArtwork)
     const movementMode = useGalleryStore((s) => s.movementMode)
@@ -19,152 +19,10 @@ export default function FastTravelMenu() {
     ]
 
     useEffect(() => {
-        const handleResize = () => {
-            setIsMobile(window.innerWidth <= 768)
+        if (isMobile) {
+            setCollapsed(true)
         }
-        handleResize()
-        window.addEventListener('resize', handleResize)
-        return () => window.removeEventListener('resize', handleResize)
-    }, [])
-
-    if (isMobile) {
-        const handleCycleMovement = () => {
-            setMovementMode(movementMode === 'float' ? 'ground' : 'float')
-        }
-
-        const handleFastTravelCycle = () => {
-            const currentPos = useGalleryStore.getState().defaultCameraPosition || [8, 2.2, 18]
-            let closestIndex = 0
-            let minDistance = Infinity
-            LOCATIONS.forEach((loc, idx) => {
-                const dx = loc.position[0] - currentPos[0]
-                const dy = loc.position[1] - currentPos[1]
-                const dz = loc.position[2] - currentPos[2]
-                const dist = Math.sqrt(dx*dx + dy*dy + dz*dz)
-                if (dist < minDistance) {
-                    minDistance = dist
-                    closestIndex = idx
-                }
-            })
-            const nextIndex = (closestIndex + 1) % LOCATIONS.length
-            const loc = LOCATIONS[nextIndex]
-            fastTravel(loc.position, loc.lookAt)
-        }
-
-        // Determine current closest location to show label
-        const currentPos = defaultCameraPosition || [8, 2.2, 18]
-        let closestIndex = 0
-        let minDistance = Infinity
-        LOCATIONS.forEach((loc, idx) => {
-            const dx = loc.position[0] - currentPos[0]
-            const dy = loc.position[1] - currentPos[1]
-            const dz = loc.position[2] - currentPos[2]
-            const dist = Math.sqrt(dx*dx + dy*dy + dz*dz)
-            if (dist < minDistance) {
-                minDistance = dist
-                closestIndex = idx
-            }
-        })
-        const activeLoc = LOCATIONS[closestIndex]
-
-        return (
-            <motion.div
-                animate={{ opacity: (selectedArtwork || !hudVisible) ? 0 : 1 }}
-                transition={{ duration: 0.4 }}
-                style={{
-                    position: 'absolute',
-                    top: 16,
-                    left: 16,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px',
-                    zIndex: 100,
-                    pointerEvents: (selectedArtwork || !hudVisible) ? 'none' : 'auto',
-                }}
-            >
-                {/* Movement Mode Toggle Button */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <button
-                        onClick={handleCycleMovement}
-                        style={{
-                            width: '44px',
-                            height: '44px',
-                            borderRadius: '50%',
-                            background: 'rgba(0, 0, 0, 0.65)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            color: '#c8a96e',
-                            backdropFilter: 'blur(8px)',
-                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-                            outline: 'none',
-                        }}
-                    >
-                        {movementMode === 'float' ? <Compass size={18} /> : <Footprints size={18} />}
-                    </button>
-                    <span style={{ 
-                        color: '#c8a96e', 
-                        fontSize: '10px', 
-                        fontWeight: '700', 
-                        background: 'rgba(0,0,0,0.65)', 
-                        padding: '4px 10px', 
-                        borderRadius: '12px', 
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        backdropFilter: 'blur(8px)',
-                        fontFamily: 'monospace',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-                        userSelect: 'none'
-                    }}>
-                        {movementMode}
-                    </span>
-                </div>
-
-                {/* Fast Travel Location Button */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <button
-                        onClick={handleFastTravelCycle}
-                        style={{
-                            width: '44px',
-                            height: '44px',
-                            borderRadius: '50%',
-                            background: 'rgba(0, 0, 0, 0.65)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            color: '#c8a96e',
-                            backdropFilter: 'blur(8px)',
-                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-                            outline: 'none',
-                        }}
-                    >
-                        <MapPin size={18} />
-                    </button>
-                    <span style={{ 
-                        color: '#fff', 
-                        fontSize: '10px', 
-                        fontWeight: '600', 
-                        background: 'rgba(0,0,0,0.65)', 
-                        padding: '4px 10px', 
-                        borderRadius: '12px', 
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        backdropFilter: 'blur(8px)',
-                        fontFamily: 'monospace',
-                        letterSpacing: '0.5px',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-                        userSelect: 'none'
-                    }}>
-                        {activeLoc.name}
-                    </span>
-                </div>
-            </motion.div>
-        )
-    }
+    }, [isMobile])
 
     return (
         <motion.div
@@ -172,8 +30,8 @@ export default function FastTravelMenu() {
             transition={{ duration: 0.4 }}
             style={{
                 position: 'absolute',
-                top: 28,
-                left: 28,
+                top: 'var(--panel-top)',
+                left: 'var(--panel-left)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '8px',
@@ -186,7 +44,7 @@ export default function FastTravelMenu() {
                 onClick={() => setCollapsed(!collapsed)}
                 style={{ 
                     color: '#c8a96e', 
-                    fontSize: '13px', 
+                    fontSize: 'var(--panel-header-font-size)', 
                     fontWeight: 'bold', 
                     letterSpacing: '1.2px', 
                     display: 'flex',
@@ -196,12 +54,12 @@ export default function FastTravelMenu() {
                     userSelect: 'none',
                     background: 'rgba(0,0,0,0.65)',
                     backdropFilter: 'blur(8px)',
-                    padding: '10px 14px',
+                    padding: 'var(--panel-header-padding)',
                     borderRadius: '8px',
                     border: '1px solid rgba(255, 255, 255, 0.08)',
                     transition: 'all 0.2s',
                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-                    width: '200px'
+                    width: 'var(--nav-header-width)'
                 }}
                 onMouseEnter={(e) => {
                     e.currentTarget.style.borderColor = 'rgba(200, 169, 110, 0.5)'
@@ -214,7 +72,7 @@ export default function FastTravelMenu() {
                     e.currentTarget.style.color = '#c8a96e'
                 }}
             >
-                <span>NAVIGATION</span>
+                <span>{isMobile ? 'NAV' : 'NAVIGATION'}</span>
                 {collapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
             </div>
 
@@ -231,14 +89,14 @@ export default function FastTravelMenu() {
                     overflow: 'hidden',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '10px',
-                    width: '228px'
+                    gap: 'var(--panel-content-gap)',
+                    width: 'var(--nav-content-width)'
                 }}
             >
-                <div style={{ color: '#c8a96e', fontSize: '12px', fontWeight: 'bold', letterSpacing: '0.8px', marginTop: '4px' }}>
+                <div style={{ color: '#c8a96e', fontSize: 'var(--nav-subheader-font-size)', fontWeight: 'bold', letterSpacing: '0.8px', marginTop: '4px' }}>
                     MOVEMENT MODE
                 </div>
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '4px' }}>
+                <div style={{ display: 'flex', gap: 'var(--btn-gap)', marginBottom: '4px' }}>
                     <button
                         onClick={() => setMovementMode('float')}
                         style={{
@@ -248,19 +106,19 @@ export default function FastTravelMenu() {
                             color: movementMode === 'float' ? '#fff' : 'rgba(255, 255, 255, 0.6)',
                             border: '1px solid',
                             borderColor: movementMode === 'float' ? 'rgba(200, 169, 110, 0.8)' : 'rgba(255, 255, 255, 0.1)',
-                            padding: '8px 0',
+                            padding: 'var(--btn-padding)',
                             borderRadius: '6px',
                             cursor: 'pointer',
-                            fontSize: '12px',
+                            fontSize: 'var(--btn-font-size)',
                             fontWeight: '600',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: '6px',
+                            gap: 'var(--btn-gap)',
                             transition: 'all 0.2s',
                         }}
                     >
-                        <Compass size={14} />
+                        <Compass style={{ width: 'var(--btn-icon-size)', height: 'var(--btn-icon-size)' }} />
                         <span>Float</span>
                     </button>
                     <button
@@ -272,24 +130,24 @@ export default function FastTravelMenu() {
                             color: movementMode === 'ground' ? '#fff' : 'rgba(255, 255, 255, 0.6)',
                             border: '1px solid',
                             borderColor: movementMode === 'ground' ? 'rgba(200, 169, 110, 0.8)' : 'rgba(255, 255, 255, 0.1)',
-                            padding: '8px 0',
+                            padding: 'var(--btn-padding)',
                             borderRadius: '6px',
                             cursor: 'pointer',
-                            fontSize: '12px',
+                            fontSize: 'var(--btn-font-size)',
                             fontWeight: '600',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: '6px',
+                            gap: 'var(--btn-gap)',
                             transition: 'all 0.2s',
                         }}
                     >
-                        <Footprints size={14} />
+                        <Footprints style={{ width: 'var(--btn-icon-size)', height: 'var(--btn-icon-size)' }} />
                         <span>Ground</span>
                     </button>
                 </div>
 
-                <div style={{ color: '#c8a96e', fontSize: '12px', fontWeight: 'bold', letterSpacing: '0.8px' }}>
+                <div style={{ color: '#c8a96e', fontSize: 'var(--nav-subheader-font-size)', fontWeight: 'bold', letterSpacing: '0.8px' }}>
                     FAST TRAVEL
                 </div>
                 {LOCATIONS.map((loc) => (
@@ -301,15 +159,15 @@ export default function FastTravelMenu() {
                             backdropFilter: 'blur(8px)',
                             color: 'rgba(255, 255, 255, 0.8)',
                             border: '1px solid rgba(255, 255, 255, 0.1)',
-                            padding: '8px 16px',
+                            padding: 'var(--nav-btn-padding)',
                             borderRadius: '6px',
                             cursor: 'pointer',
                             textAlign: 'left',
-                            fontSize: '13px',
+                            fontSize: 'var(--nav-btn-font-size)',
                             letterSpacing: '0.5px',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '8px',
+                            gap: 'var(--nav-btn-gap)',
                             transition: 'all 0.2s',
                         }}
                         onMouseEnter={(e) => {
@@ -323,7 +181,7 @@ export default function FastTravelMenu() {
                             e.currentTarget.style.color = 'rgba(255, 255, 255, 0.8)'
                         }}
                     >
-                        <MapPin size={14} style={{ color: '#c8a96e', flexShrink: 0 }} />
+                        <MapPin style={{ color: '#c8a96e', flexShrink: 0, width: 'var(--nav-btn-icon-size)', height: 'var(--nav-btn-icon-size)' }} />
                         <span>{loc.name}</span>
                     </button>
                 ))}

@@ -4,8 +4,9 @@ import useGalleryStore from '../store/useGalleryStore'
 import { Sun, Moon, Sunrise, Sunset, Play, Pause, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react'
 
 export default function TimeControlPanel() {
-    const [collapsed, setCollapsed] = useState(false)
-    const [isMobile, setIsMobile] = useState(false)
+    const isMobile = useGalleryStore((s) => s.isMobile)
+    const timePanelExpanded = useGalleryStore((s) => s.timePanelExpanded)
+    const setTimePanelExpanded = useGalleryStore((s) => s.setTimePanelExpanded)
     const timeOfDay = useGalleryStore((s) => s.timeOfDay)
     const setTimeOfDay = useGalleryStore((s) => s.setTimeOfDay)
     const isTimePaused = useGalleryStore((s) => s.isTimePaused)
@@ -14,14 +15,16 @@ export default function TimeControlPanel() {
     const selectedArtwork = useGalleryStore((s) => s.selectedArtwork)
     const hudVisible = useGalleryStore((s) => s.hudVisible)
 
+    const collapsed = !timePanelExpanded
+    const setCollapsed = (val) => setTimePanelExpanded(!val)
+
     useEffect(() => {
-        const handleResize = () => {
-            setIsMobile(window.innerWidth <= 768)
+        if (isMobile) {
+            setTimePanelExpanded(false)
+        } else {
+            setTimePanelExpanded(true)
         }
-        handleResize()
-        window.addEventListener('resize', handleResize)
-        return () => window.removeEventListener('resize', handleResize)
-    }, [])
+    }, [isMobile, setTimePanelExpanded])
 
     // Formats 0-24 hour decimal representation to hh:mm AM/PM format
     const formatTime = (timeDec) => {
@@ -52,136 +55,20 @@ export default function TimeControlPanel() {
         { name: 'Night', hour: 21.5, icon: Moon }
     ]
 
-    if (isMobile) {
-        const stage = getTimeStageDetails(timeOfDay)
-        const StageIcon = stage.icon
-
-        const handleCyclePresets = () => {
-            let closestIdx = 0
-            let minDiff = Infinity
-            presets.forEach((preset, index) => {
-                const diff = Math.abs(timeOfDay - preset.hour)
-                if (diff < minDiff) {
-                    minDiff = diff
-                    closestIdx = index
-                }
-            })
-            const nextIdx = (closestIdx + 1) % presets.length
-            setTimeOfDay(presets[nextIdx].hour)
-            setTimePaused(true)
-        }
-
-        return (
-            <motion.div
-                animate={{ opacity: (selectedArtwork || !hudVisible) ? 0 : 1 }}
-                transition={{ duration: 0.4 }}
-                style={{
-                    position: 'absolute',
-                    top: 16,
-                    right: 16,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px',
-                    zIndex: 100,
-                    pointerEvents: (selectedArtwork || !hudVisible) ? 'none' : 'auto',
-                }}
-            >
-                {/* Play/Pause Button */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
-                    <span style={{ 
-                        color: '#fff', 
-                        fontSize: '10px', 
-                        fontWeight: '600', 
-                        background: 'rgba(0,0,0,0.65)', 
-                        padding: '4px 10px', 
-                        borderRadius: '12px', 
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        backdropFilter: 'blur(8px)',
-                        fontFamily: 'monospace',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-                        userSelect: 'none'
-                    }}>
-                        {isTimePaused ? 'PAUSED' : 'LIVE'}
-                    </span>
-                    <button
-                        onClick={() => setTimePaused(!isTimePaused)}
-                        style={{
-                            width: '44px',
-                            height: '44px',
-                            borderRadius: '50%',
-                            background: isTimePaused ? 'rgba(0, 0, 0, 0.65)' : 'rgba(200, 169, 110, 0.85)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            color: isTimePaused ? '#c8a96e' : '#0a090a',
-                            backdropFilter: 'blur(8px)',
-                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-                            outline: 'none',
-                        }}
-                    >
-                        {isTimePaused ? <Play size={16} fill="currentColor" /> : <Pause size={16} fill="currentColor" />}
-                    </button>
-                </div>
-
-                {/* Atmosphere Preset Cycle Button */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
-                    <span style={{ 
-                        color: '#c8a96e', 
-                        fontSize: '10px', 
-                        fontWeight: '700', 
-                        background: 'rgba(0,0,0,0.65)', 
-                        padding: '4px 10px', 
-                        borderRadius: '12px', 
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        backdropFilter: 'blur(8px)',
-                        fontFamily: 'monospace',
-                        letterSpacing: '0.5px',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-                        userSelect: 'none'
-                    }}>
-                        {formatTime(timeOfDay)}
-                    </span>
-                    <button
-                        onClick={handleCyclePresets}
-                        style={{
-                            width: '44px',
-                            height: '44px',
-                            borderRadius: '50%',
-                            background: 'rgba(0, 0, 0, 0.65)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            color: '#c8a96e',
-                            backdropFilter: 'blur(8px)',
-                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-                            outline: 'none',
-                        }}
-                    >
-                        <StageIcon size={18} />
-                    </button>
-                </div>
-            </motion.div>
-        )
-    }
-
     return (
         <motion.div
             animate={{ opacity: (selectedArtwork || !hudVisible) ? 0 : 1 }}
             transition={{ duration: 0.4 }}
             style={{
                 position: 'absolute',
-                top: 28,
-                right: 28,
+                top: 'var(--panel-top)',
+                right: 'var(--panel-right)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '8px',
                 zIndex: 100,
                 pointerEvents: (selectedArtwork || !hudVisible) ? 'none' : 'auto',
-                width: '260px'
+                width: 'var(--panel-width)'
             }}
         >
             {/* Header / Toggle Button */}
@@ -189,7 +76,7 @@ export default function TimeControlPanel() {
                 onClick={() => setCollapsed(!collapsed)}
                 style={{ 
                     color: '#c8a96e', 
-                    fontSize: '13px', 
+                    fontSize: 'var(--panel-header-font-size)', 
                     fontWeight: 'bold', 
                     letterSpacing: '1.2px', 
                     display: 'flex',
@@ -199,7 +86,7 @@ export default function TimeControlPanel() {
                     userSelect: 'none',
                     background: 'rgba(0,0,0,0.65)',
                     backdropFilter: 'blur(8px)',
-                    padding: '10px 14px',
+                    padding: 'var(--panel-header-padding)',
                     borderRadius: '8px',
                     border: '1px solid rgba(255, 255, 255, 0.08)',
                     transition: 'all 0.2s',
@@ -216,7 +103,7 @@ export default function TimeControlPanel() {
                     e.currentTarget.style.color = '#c8a96e'
                 }}
             >
-                <span>ENVIRONMENT & LIGHTING</span>
+                <span>{isMobile ? 'LIGHTING' : 'ENVIRONMENT & LIGHTING'}</span>
                 {collapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
             </div>
 
@@ -233,7 +120,7 @@ export default function TimeControlPanel() {
                     overflow: 'hidden',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '10px'
+                    gap: 'var(--panel-content-gap)'
                 }}
             >
                 {/* Main Translucent Control Card */}
@@ -243,24 +130,24 @@ export default function TimeControlPanel() {
                         backdropFilter: 'blur(10px)',
                         border: '1px solid rgba(255, 255, 255, 0.08)',
                         borderRadius: '8px',
-                        padding: '16px',
+                        padding: 'var(--panel-card-padding)',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '12px',
+                        gap: 'var(--panel-card-gap)',
                         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
                     }}
                 >
                     {/* Time Readout */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ color: '#fff', fontSize: '20px', fontWeight: '500', fontFamily: 'monospace' }}>
+                        <div style={{ color: '#fff', fontSize: 'var(--panel-time-font-size)', fontWeight: '500', fontFamily: 'monospace' }}>
                             {formatTime(timeOfDay)}
                         </div>
                         {(() => {
                             const stage = getTimeStageDetails(timeOfDay)
                             const StageIcon = stage.icon
                             return (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#c8a96e', fontSize: '12px', fontWeight: '600', letterSpacing: '0.5px' }}>
-                                    <StageIcon size={14} />
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--panel-stage-gap)', color: '#c8a96e', fontSize: 'var(--panel-stage-font-size)', fontWeight: '600', letterSpacing: '0.5px' }}>
+                                    <StageIcon style={{ width: 'var(--panel-stage-icon-size)', height: 'var(--panel-stage-icon-size)' }} />
                                     <span>{stage.label}</span>
                                 </div>
                             )
@@ -293,7 +180,7 @@ export default function TimeControlPanel() {
                     </div>
 
                     {/* Simulation Control Buttons */}
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                    <div style={{ display: 'flex', gap: 'var(--btn-gap)', marginTop: '4px' }}>
                         <button
                             onClick={() => setTimePaused(!isTimePaused)}
                             style={{
@@ -302,15 +189,15 @@ export default function TimeControlPanel() {
                                 color: isTimePaused ? 'rgba(255, 255, 255, 0.7)' : '#fff',
                                 border: '1px solid',
                                 borderColor: isTimePaused ? 'rgba(255, 255, 255, 0.15)' : 'rgba(200, 169, 110, 0.5)',
-                                padding: '8px 0',
+                                padding: 'var(--btn-padding)',
                                 borderRadius: '4px',
                                 cursor: 'pointer',
-                                fontSize: '11px',
+                                fontSize: 'var(--btn-font-size)',
                                 fontWeight: '600',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                gap: '6px',
+                                gap: 'var(--btn-gap)',
                                 transition: 'all 0.2s',
                             }}
                             onMouseEnter={(e) => {
@@ -322,8 +209,12 @@ export default function TimeControlPanel() {
                                 e.currentTarget.style.color = isTimePaused ? 'rgba(255, 255, 255, 0.7)' : '#fff'
                             }}
                         >
-                            {isTimePaused ? <Play size={12} fill="currentColor" /> : <Pause size={12} fill="currentColor" />}
-                            <span>{isTimePaused ? 'Play Time' : 'Pause Time'}</span>
+                            {isTimePaused ? (
+                                <Play style={{ width: 'var(--btn-icon-size)', height: 'var(--btn-icon-size)' }} fill="currentColor" />
+                            ) : (
+                                <Pause style={{ width: 'var(--btn-icon-size)', height: 'var(--btn-icon-size)' }} fill="currentColor" />
+                            )}
+                            <span>{isTimePaused ? (isMobile ? 'Play' : 'Play Time') : (isMobile ? 'Pause' : 'Pause Time')}</span>
                         </button>
                         
                         <button
@@ -333,15 +224,15 @@ export default function TimeControlPanel() {
                                 background: 'rgba(0, 0, 0, 0.5)',
                                 color: 'rgba(255, 255, 255, 0.7)',
                                 border: '1px solid rgba(255, 255, 255, 0.15)',
-                                padding: '8px 0',
+                                padding: 'var(--btn-padding)',
                                 borderRadius: '4px',
                                 cursor: 'pointer',
-                                fontSize: '11px',
+                                fontSize: 'var(--btn-font-size)',
                                 fontWeight: '600',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                gap: '6px',
+                                gap: 'var(--btn-gap)',
                                 transition: 'all 0.2s',
                             }}
                             onMouseEnter={(e) => {
@@ -355,18 +246,18 @@ export default function TimeControlPanel() {
                                 e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)'
                             }}
                         >
-                            <RotateCcw size={12} />
+                            <RotateCcw style={{ width: 'var(--btn-icon-size)', height: 'var(--btn-icon-size)' }} />
                             <span>Reset</span>
                         </button>
                     </div>
                 </div>
 
                 {/* Quick Presets Section */}
-                <div style={{ color: '#c8a96e', fontSize: '13px', fontWeight: '600', letterSpacing: '0.8px', marginTop: '6px' }}>
+                <div style={{ color: '#c8a96e', fontSize: 'var(--presets-header-font-size)', fontWeight: '600', letterSpacing: '0.8px', marginTop: '6px' }}>
                     PRESETS
                 </div>
                 
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--presets-gap)' }}>
                     {presets.map((preset) => {
                         const active = Math.abs(timeOfDay - preset.hour) < 0.15
                         return (
@@ -378,8 +269,8 @@ export default function TimeControlPanel() {
                                 }}
                                 title={preset.name} // Tooltip showing name
                                 style={{
-                                    flex: 1,
-                                    height: '42px',
+                                    width: 'var(--preset-btn-size)',
+                                    height: 'var(--preset-btn-size)',
                                     background: active ? 'rgba(200, 169, 110, 0.85)' : 'rgba(0, 0, 0, 0.65)',
                                     backdropFilter: 'blur(8px)',
                                     border: '1px solid',
@@ -401,8 +292,8 @@ export default function TimeControlPanel() {
                                     e.currentTarget.style.borderColor = active ? '#c8a96e' : 'rgba(255, 255, 255, 0.08)'
                                     e.currentTarget.style.transform = 'scale(1.0)'
                                 }}
-                            >
-                                <preset.icon size={18} style={{ color: active ? '#0a090a' : '#c8a96e' }} />
+                             >
+                                <preset.icon style={{ color: active ? '#0a090a' : '#c8a96e', width: 'var(--preset-icon-size)', height: 'var(--preset-icon-size)' }} />
                             </button>
                         )
                     })}

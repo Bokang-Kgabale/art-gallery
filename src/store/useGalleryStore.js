@@ -8,6 +8,10 @@ const useGalleryStore = create((set) => ({
     selectedArtwork: null,
     isTransitioning: false,
 
+    // ── Device State ─────────────────────────────────────────────────
+    isMobile: false,
+    setIsMobile: (val) => set({ isMobile: val }),
+
     // ── Time of Day ──────────────────────────────────────────────────
     // Default 7am: with AZ_OFFSET=+π/2 the sun rises from the south at 6am,
     // so at 7am it is low and golden, beaming straight through the entry door.
@@ -18,6 +22,9 @@ const useGalleryStore = create((set) => ({
     setTimeScale: (scale) => set({ timeScale: scale }),
     setTimePaused: (paused) => set({ isTimePaused: paused }),
     resetTimeOfDay: () => set({ timeOfDay: 7, timeScale: 40, isTimePaused: false }),
+
+    timePanelExpanded: false,
+    setTimePanelExpanded: (val) => set({ timePanelExpanded: val }),
 
     // ── HUD Visibility ────────────────────────────────────────────────
     hudVisible: true,

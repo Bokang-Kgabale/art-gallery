@@ -1,12 +1,22 @@
 import { useProgress } from '@react-three/drei'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, useState } from 'react'
+import { isMobileDevice, requestFullscreenAndLockOrientation } from '../utils/device'
+import useGalleryStore from '../store/useGalleryStore'
 
 const QUOTES = [
   { text: "The true work of art is but a shadow of the divine perfection.", author: "Michelangelo" },
   { text: "Choose only one master—nature.", author: "Rembrandt" },
   { text: "All works, no matter what or by whom painted, are nothing but bagatelles unless they are made and painted from life.", author: "Caravaggio" },
-  { text: "I paint flowers so they will not die.", author: "Frida Kahlo" }
+  { text: "I paint flowers so they will not die.", author: "Frida Kahlo" },
+  { text: "Art is the lie that enables us to realize the truth.", author: "Pablo Picasso" },
+  { text: "Architecture should speak of its time and place, but yearn for timelessness.", author: "Frank Gehry" },
+  { text: "I found I could say things with color and shapes that I couldn't say any other way—things I had no words for.", author: "Georgia O'Keeffe" },
+  { text: "Simplicity is the ultimate sophistication.", author: "Leonardo da Vinci" },
+  { text: "Brutalism is not a style, it is a way of life, an attitude of mind.", author: "Brutalist Manifesto" },
+  { text: "An artist is not paid for his labor but for his vision.", author: "James McNeill Whistler" },
+  { text: "Space and light and order. Those are the things that men need just as much as they need bread or a place to sleep.", author: "Le Corbusier" },
+  { text: "Color is a power which directly influences the soul.", author: "Wassily Kandinsky" }
 ]
 
 const TELEMETRY_STEPS = [
@@ -62,6 +72,12 @@ export default function CreativeLoader() {
   // Automatically fade loader out if finished
   const handleEnter = () => {
     setUserClickedEnter(true)
+
+    // Automatically trigger fullscreen and lock orientation on mobile devices
+    if (isMobileDevice()) {
+      requestFullscreenAndLockOrientation()
+    }
+
     setTimeout(() => {
       setMounted(false)
     }, 800)
@@ -156,7 +172,7 @@ export default function CreativeLoader() {
             justifyContent: 'center',
             width: '90%',
             maxWidth: '560px',
-            padding: '40px',
+            padding: 'var(--loader-padding)',
             borderRadius: '20px',
             background: 'rgba(15, 14, 15, 0.65)',
             backdropFilter: 'blur(16px)',
@@ -185,7 +201,7 @@ export default function CreativeLoader() {
               letterSpacing: '3px',
               color: 'rgba(255,255,255,0.4)',
               textTransform: 'uppercase',
-              marginBottom: '20px'
+              marginBottom: 'var(--loader-margin)'
             }}
           >
             A VIRTUAL BRUTALIST SPACE
@@ -195,14 +211,14 @@ export default function CreativeLoader() {
           <div style={{
             width: '100%',
             aspectRatio: '400 / 330',
-            maxHeight: '230px',
+            maxHeight: 'var(--blueprint-max-height)',
             position: 'relative',
-            marginBottom: '20px',
+            marginBottom: 'var(--loader-margin)',
             background: 'rgba(5, 6, 8, 0.75)',
             border: '1px solid rgba(200, 169, 110, 0.12)',
             borderRadius: '6px',
             overflow: 'hidden',
-            display: 'flex',
+            display: 'var(--blueprint-display)',
             alignItems: 'center',
             justifyContent: 'center',
             boxShadow: 'inset 0 0 25px rgba(0, 0, 0, 0.9)',
@@ -289,7 +305,7 @@ export default function CreativeLoader() {
 
               {/* Architectural Concrete Underlay (Shadow block of walls) */}
               <path
-                d="M 50 65 L 350 65 L 350 275 L 275 335 L 80 335 Z"
+                d="M 77 65 L 350 65 L 350 275 M 260 260 L 350 335 M 275 335 L 77 335 L 77 65"
                 fill="none"
                 stroke="rgba(200, 169, 110, 0.05)"
                 strokeWidth={8}
@@ -299,9 +315,9 @@ export default function CreativeLoader() {
 
               {/* Primary Structuring Walls - Drawn sequentially in real-time */}
               <g filter="url(#blueprint-glow)">
-                {/* Wall E (Left Wall) */}
+                {/* Wall E (Left Wall - perfectly straight to match GalleryScene.jsx) */}
                 <motion.path
-                  d="M 80 335 L 50 65"
+                  d="M 77 335 L 77 65"
                   fill="none"
                   stroke="#c8a96e"
                   strokeWidth={2}
@@ -310,18 +326,9 @@ export default function CreativeLoader() {
                   transition={{ duration: 0.15, ease: "easeOut" }}
                 />
 
-                {/* Wall A (Bottom Facade - split for door opening) */}
+                {/* Wall A (Bottom Facade) */}
                 <motion.path
-                  d="M 50 65 L 235.6 65"
-                  fill="none"
-                  stroke="#c8a96e"
-                  strokeWidth={2}
-                  initial={{ pathLength: 0 }}
-                  animate={{ pathLength: Math.min(1, smoothedProgress / 40) }}
-                  transition={{ duration: 0.15, ease: "easeOut" }}
-                />
-                <motion.path
-                  d="M 269.4 65 L 350 65"
+                  d="M 77 65 L 350 65"
                   fill="none"
                   stroke="#c8a96e"
                   strokeWidth={2}
@@ -359,9 +366,9 @@ export default function CreativeLoader() {
                   transition={{ duration: 0.15, ease: "easeOut" }}
                 />
 
-                {/* Wall C (Angled Facade) */}
+                {/* Wall C (Angled Facade - starts at Pillar B to match user sketch) */}
                 <motion.path
-                  d="M 350 275 L 275 335"
+                  d="M 260 260 L 350 335"
                   fill="none"
                   stroke="#c8a96e"
                   strokeWidth={2}
@@ -372,7 +379,7 @@ export default function CreativeLoader() {
 
                 {/* Wall D (Top Facade) */}
                 <motion.path
-                  d="M 275 335 L 80 335"
+                  d="M 275 335 L 77 335"
                   fill="none"
                   stroke="#c8a96e"
                   strokeWidth={2}
@@ -380,36 +387,6 @@ export default function CreativeLoader() {
                   animate={{ pathLength: Math.min(1, smoothedProgress / 40) }}
                   transition={{ duration: 0.15, ease: "easeOut" }}
                 />
-              </g>
-
-              {/* Entry Door - Swing & Leaf */}
-              <g style={{ opacity: smoothedProgress >= 45 ? 1 : 0, transition: 'opacity 0.6s' }}>
-                {/* Door Leaf (Angled 90 degrees open) */}
-                <motion.line
-                  x1={235.6}
-                  y1={65}
-                  x2={235.6}
-                  y2={98.75}
-                  stroke="#c8a96e"
-                  strokeWidth={1.5}
-                  initial={{ pathLength: 0 }}
-                  animate={{ pathLength: smoothedProgress >= 45 ? 1 : 0 }}
-                  transition={{ duration: 0.4 }}
-                />
-                {/* Swing Arc */}
-                <motion.path
-                  d="M 235.6 98.75 A 33.75 33.75 0 0 0 269.4 65"
-                  fill="none"
-                  stroke="#c8a96e"
-                  strokeWidth={0.75}
-                  strokeDasharray="2,2"
-                  initial={{ pathLength: 0 }}
-                  animate={{ pathLength: smoothedProgress >= 45 ? 1 : 0 }}
-                  transition={{ duration: 0.5 }}
-                />
-                <text x={252} y={55} fill="rgba(255,255,255,0.3)" fontSize={6} fontFamily="monospace">
-                  MAIN ACCESS
-                </text>
               </g>
 
               {/* Slit Windows (Dynamic Cyan Panels) */}
@@ -459,18 +436,18 @@ export default function CreativeLoader() {
 
                 {/* ── Wall E: Minimal Graphite Collection ── */}
                 {/* Cashmere (4.5 width) */}
-                <g transform="translate(57.5, 132.5) rotate(-6.34)">
+                <g transform="translate(77, 132.5)">
                   <rect x={-2.5} y={-33.75} width={5} height={67.5} fill="rgba(255,255,255,0.06)" stroke="#c8a96e" strokeWidth={0.75} />
                 </g>
                 {/* Matelasse */}
-                <g transform="translate(67.5, 222.5) rotate(-6.34)">
+                <g transform="translate(77, 222.5)">
                   <rect x={-2.5} y={-11.25} width={5} height={22.5} fill="rgba(255,255,255,0.06)" stroke="#c8a96e" strokeWidth={0.75} />
                 </g>
                 {/* Oyster */}
-                <g transform="translate(74.17, 282.5) rotate(-6.34)">
+                <g transform="translate(77, 282.5)">
                   <rect x={-2.5} y={-18} width={5} height={36} fill="rgba(255,255,255,0.06)" stroke="#c8a96e" strokeWidth={0.75} />
                 </g>
-                <text transform="translate(68, 135) rotate(83.66)" fill="rgba(255,255,255,0.4)" fontSize={5.5} fontFamily="monospace">
+                <text transform="translate(64, 200) rotate(-90)" fill="rgba(255,255,255,0.4)" fontSize={5.5} fontFamily="monospace" textAnchor="middle">
                   GRAPHITE SERIES
                 </text>
 
@@ -507,11 +484,11 @@ export default function CreativeLoader() {
               color: 'rgba(200, 169, 110, 0.85)',
               textAlign: 'left',
               overflowY: 'hidden',
-              display: 'flex',
+              display: 'var(--console-display)',
               flexDirection: 'column',
               justifyContent: 'flex-end',
               gap: '4px',
-              marginBottom: '22px',
+              marginBottom: 'var(--console-margin)',
               boxShadow: 'inset 0 0 10px rgba(0, 0, 0, 0.8)',
             }}
           >
@@ -551,7 +528,7 @@ export default function CreativeLoader() {
           </div>
 
           {/* Loading Stats Panel (Glowing minimalist progress bar) */}
-          <div style={{ width: '100%', marginBottom: '22px' }}>
+          <div style={{ width: '100%', marginBottom: 'var(--stats-margin)' }}>
             <div
               style={{
                 display: 'flex',
@@ -598,12 +575,12 @@ export default function CreativeLoader() {
             style={{
               position: 'relative',
               width: '100%',
-              minHeight: '68px',
+              minHeight: 'var(--action-min-height)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               borderTop: '1px solid rgba(200, 169, 110, 0.08)',
-              paddingTop: '20px'
+              paddingTop: 'var(--action-padding-top)'
             }}
           >
             <AnimatePresence mode="wait">
@@ -652,9 +629,9 @@ export default function CreativeLoader() {
                       background: 'rgba(200, 169, 110, 0.95)',
                       border: '1px solid rgba(200, 169, 110, 1)',
                       color: '#0a090a',
-                      padding: '12px 36px',
+                      padding: 'var(--enter-button-padding)',
                       borderRadius: '30px',
-                      fontSize: '11px',
+                      fontSize: 'var(--enter-button-font-size)',
                       fontWeight: '800',
                       letterSpacing: '3px',
                       textTransform: 'uppercase',
