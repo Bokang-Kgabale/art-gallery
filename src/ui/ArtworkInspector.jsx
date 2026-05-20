@@ -1,5 +1,5 @@
 import { useRef, useCallback, useState, Suspense } from 'react'
-import { Canvas, useFrame, useLoader } from '@react-three/fiber'
+import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber'
 import { Environment } from '@react-three/drei'
 import { TextureLoader } from 'three'
 import * as THREE from 'three'
@@ -8,74 +8,70 @@ import useGalleryStore from '../store/useGalleryStore'
 
 // ─── Inspector frame styles (scaled to inspector canvas size ~3.0 units) ──────
 
-function InspectorFrameDarkOrnate({ accent }) {
-    const S = 3.0
+function InspectorFrameDarkOrnate({ W, H, accent }) {
     return (
         <>
             <mesh position={[0, 0, -0.18]}>
-                <boxGeometry args={[S + 0.42, S + 0.42, 0.28]} />
+                <boxGeometry args={[W + 0.42, H + 0.42, 0.28]} />
                 <meshStandardMaterial color="#0a0807" roughness={0.55} metalness={0.08} />
             </mesh>
             <mesh position={[0, 0, -0.10]}>
-                <boxGeometry args={[S + 0.22, S + 0.22, 0.14]} />
+                <boxGeometry args={[W + 0.22, H + 0.22, 0.14]} />
                 <meshStandardMaterial color={accent || '#6a4f22'} roughness={0.18} metalness={0.92} envMapIntensity={3} />
             </mesh>
             <mesh position={[0, 0, -0.035]}>
-                <boxGeometry args={[S + 0.06, S + 0.06, 0.08]} />
+                <boxGeometry args={[W + 0.06, H + 0.06, 0.08]} />
                 <meshStandardMaterial color="#060504" roughness={0.7} metalness={0.1} />
             </mesh>
         </>
     )
 }
 
-function InspectorFrameMinimal({ accent }) {
-    const S = 3.0
+function InspectorFrameMinimal({ W, H, accent }) {
     const T = 0.07
     const D = 0.04
     const color = accent || '#7a7a7a'
     return (
         <>
-            <mesh position={[0, S / 2 + T / 2, -D / 2]}><boxGeometry args={[S + T * 2, T, D]} /><meshStandardMaterial color={color} roughness={0.08} metalness={0.96} envMapIntensity={2} /></mesh>
-            <mesh position={[0, -(S / 2 + T / 2), -D / 2]}><boxGeometry args={[S + T * 2, T, D]} /><meshStandardMaterial color={color} roughness={0.08} metalness={0.96} envMapIntensity={2} /></mesh>
-            <mesh position={[-(S / 2 + T / 2), 0, -D / 2]}><boxGeometry args={[T, S, D]} /><meshStandardMaterial color={color} roughness={0.08} metalness={0.96} envMapIntensity={2} /></mesh>
-            <mesh position={[S / 2 + T / 2, 0, -D / 2]}><boxGeometry args={[T, S, D]} /><meshStandardMaterial color={color} roughness={0.08} metalness={0.96} envMapIntensity={2} /></mesh>
-            <mesh position={[0, 0, -D * 2]}><planeGeometry args={[S + T * 2, S + T * 2]} /><meshStandardMaterial color="#111" roughness={0.9} /></mesh>
+            <mesh position={[0, H / 2 + T / 2, -D / 2]}><boxGeometry args={[W + T * 2, T, D]} /><meshStandardMaterial color={color} roughness={0.08} metalness={0.96} envMapIntensity={2} /></mesh>
+            <mesh position={[0, -(H / 2 + T / 2), -D / 2]}><boxGeometry args={[W + T * 2, T, D]} /><meshStandardMaterial color={color} roughness={0.08} metalness={0.96} envMapIntensity={2} /></mesh>
+            <mesh position={[-(W / 2 + T / 2), 0, -D / 2]}><boxGeometry args={[T, H, D]} /><meshStandardMaterial color={color} roughness={0.08} metalness={0.96} envMapIntensity={2} /></mesh>
+            <mesh position={[W / 2 + T / 2, 0, -D / 2]}><boxGeometry args={[T, H, D]} /><meshStandardMaterial color={color} roughness={0.08} metalness={0.96} envMapIntensity={2} /></mesh>
+            <mesh position={[0, 0, -D * 2]}><planeGeometry args={[W + T * 2, H + T * 2]} /><meshStandardMaterial color="#111" roughness={0.9} /></mesh>
         </>
     )
 }
 
-function InspectorFrameFloat({ accent }) {
-    const S = 3.0
+function InspectorFrameFloat({ W, H, accent }) {
     const T = 0.05
     const glow = accent || '#00aaff'
     return (
         <>
-            <mesh position={[0, S / 2 + T / 2, 0.01]}><boxGeometry args={[S + T * 2, T, T]} /><meshStandardMaterial color={glow} emissive={glow} emissiveIntensity={1.2} roughness={0.1} /></mesh>
-            <mesh position={[0, -(S / 2 + T / 2), 0.01]}><boxGeometry args={[S + T * 2, T, T]} /><meshStandardMaterial color={glow} emissive={glow} emissiveIntensity={1.2} roughness={0.1} /></mesh>
-            <mesh position={[-(S / 2 + T / 2), 0, 0.01]}><boxGeometry args={[T, S, T]} /><meshStandardMaterial color={glow} emissive={glow} emissiveIntensity={1.2} roughness={0.1} /></mesh>
-            <mesh position={[S / 2 + T / 2, 0, 0.01]}><boxGeometry args={[T, S, T]} /><meshStandardMaterial color={glow} emissive={glow} emissiveIntensity={1.2} roughness={0.1} /></mesh>
-            <mesh position={[0, 0, -0.025]}><planeGeometry args={[S + 0.15, S + 0.15]} /><meshStandardMaterial color="#06060a" roughness={0.9} /></mesh>
+            <mesh position={[0, H / 2 + T / 2, 0.01]}><boxGeometry args={[W + T * 2, T, T]} /><meshStandardMaterial color={glow} emissive={glow} emissiveIntensity={1.2} roughness={0.1} /></mesh>
+            <mesh position={[0, -(H / 2 + T / 2), 0.01]}><boxGeometry args={[W + T * 2, T, T]} /><meshStandardMaterial color={glow} emissive={glow} emissiveIntensity={1.2} roughness={0.1} /></mesh>
+            <mesh position={[-(W / 2 + T / 2), 0, 0.01]}><boxGeometry args={[T, H, T]} /><meshStandardMaterial color={glow} emissive={glow} emissiveIntensity={1.2} roughness={0.1} /></mesh>
+            <mesh position={[W / 2 + T / 2, 0, 0.01]}><boxGeometry args={[T, H, T]} /><meshStandardMaterial color={glow} emissive={glow} emissiveIntensity={1.2} roughness={0.1} /></mesh>
+            <mesh position={[0, 0, -0.025]}><planeGeometry args={[W + 0.15, H + 0.15]} /><meshStandardMaterial color="#06060a" roughness={0.9} /></mesh>
             {/* Coloured fill light matching the accent */}
             <pointLight position={[0, 0, 2]} intensity={0.8} color={glow} distance={6} />
         </>
     )
 }
 
-function InspectorFrameGilt({ accent }) {
-    const S = 3.0
+function InspectorFrameGilt({ W, H, accent }) {
     const gold = accent || '#c8a040'
     return (
         <>
             <mesh position={[0, 0, -0.16]}>
-                <boxGeometry args={[S + 0.52, S + 0.52, 0.24]} />
+                <boxGeometry args={[W + 0.52, H + 0.52, 0.24]} />
                 <meshStandardMaterial color={gold} roughness={0.18} metalness={0.92} envMapIntensity={4} />
             </mesh>
             <mesh position={[0, 0, -0.07]}>
-                <boxGeometry args={[S + 0.14, S + 0.14, 0.10]} />
+                <boxGeometry args={[W + 0.14, H + 0.14, 0.10]} />
                 <meshStandardMaterial color="#1a1208" roughness={0.6} metalness={0.2} />
             </mesh>
             <mesh position={[0, 0, -0.022]}>
-                <boxGeometry args={[S + 0.10, S + 0.10, 0.045]} />
+                <boxGeometry args={[W + 0.10, H + 0.10, 0.045]} />
                 <meshStandardMaterial color="#f0ebe0" roughness={0.92} metalness={0.0} />
             </mesh>
         </>
@@ -83,10 +79,10 @@ function InspectorFrameGilt({ accent }) {
 }
 
 // ─── 3-D artwork mesh ─────────────────────────────────────────────────────────
-function ArtworkMesh({ imageUrl, rotationRef, frameStyle, frameAccent }) {
+function ArtworkMesh({ artwork, rotationRef }) {
     const meshRef = useRef()
     const groupRef = useRef()
-    const texture = useLoader(TextureLoader, imageUrl)
+    const texture = useLoader(TextureLoader, artwork.image)
 
     const smoothRot = useRef({ x: 0, y: 0 })
 
@@ -99,6 +95,9 @@ function ArtworkMesh({ imageUrl, rotationRef, frameStyle, frameAccent }) {
         groupRef.current.rotation.y = smoothRot.current.y
     })
 
+    const frameStyle = artwork.frameStyle
+    const frameAccent = artwork.frameAccent
+
     const FrameComp = {
         'minimal': InspectorFrameMinimal,
         'float': InspectorFrameFloat,
@@ -106,13 +105,18 @@ function ArtworkMesh({ imageUrl, rotationRef, frameStyle, frameAccent }) {
         'dark-ornate': InspectorFrameDarkOrnate,
     }[frameStyle] ?? InspectorFrameDarkOrnate
 
+    const maxDim = Math.max(artwork.width || 1.6, artwork.height || 1.6);
+    const scale = 3.0 / maxDim;
+    const W = (artwork.width || 1.6) * scale;
+    const H = (artwork.height || 1.6) * scale;
+
     return (
         <group ref={groupRef}>
-            <FrameComp accent={frameAccent} />
+            <FrameComp W={W} H={H} accent={frameAccent} />
 
             {/* ── Artwork canvas ── */}
-            <mesh ref={meshRef}>
-                <planeGeometry args={[2.9, 2.9]} />
+            <mesh ref={meshRef} position={[0, 0, 0.015]}>
+                <planeGeometry args={[W, H]} />
                 <meshStandardMaterial
                     map={texture}
                     roughness={frameStyle === 'float' ? 0.3 : 0.5}
@@ -127,6 +131,15 @@ function ArtworkMesh({ imageUrl, rotationRef, frameStyle, frameAccent }) {
             <pointLight position={[-3, -1.5, 2]} intensity={0.3} color="#aad4ff" distance={6} />
         </group>
     )
+}
+
+function CameraController({ targetZoom }) {
+    const { camera } = useThree()
+    useFrame((_, delta) => {
+        const lerpFactor = 1 - Math.pow(0.01, delta)
+        camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetZoom.current, lerpFactor)
+    })
+    return null
 }
 
 // ─── Motion variants ──────────────────────────────────────────────────────────
@@ -176,6 +189,7 @@ export default function ArtworkInspector() {
 
     // rotation target driven by drag (only when freelook is on)
     const rotationRef = useRef({ x: 0, y: 0 })
+    const targetZoom = useRef(5.2)
 
     // Lock state — locked = artwork is fixed, no drag
     const [freeLook, setFreeLook] = useState(false)
@@ -184,6 +198,7 @@ export default function ArtworkInspector() {
     const prevId = useRef(null)
     if (artwork?.id !== prevId.current) {
         rotationRef.current = { x: 0, y: 0 }
+        targetZoom.current = 5.2
         prevId.current = artwork?.id ?? null
         // auto-lock whenever a new piece is opened
     }
@@ -217,8 +232,14 @@ export default function ArtworkInspector() {
         setDragging(false)
     }, [])
 
+    const onWheel = useCallback((e) => {
+        targetZoom.current += e.deltaY * 0.005;
+        targetZoom.current = THREE.MathUtils.clamp(targetZoom.current, 1.5, 8.0);
+    }, [])
+
     const handleReset = () => {
         rotationRef.current = { x: 0, y: 0 }
+        targetZoom.current = 5.2
         setFreeLook(false)
     }
 
@@ -257,12 +278,11 @@ export default function ArtworkInspector() {
                                 style={{ background: '#0a0908' }}
                             >
                                 <Suspense fallback={null}>
+                                    <CameraController targetZoom={targetZoom} />
                                     <Environment preset="studio" background={false} />
                                     <ArtworkMesh
-                                        imageUrl={artwork.image}
+                                        artwork={artwork}
                                         rotationRef={rotationRef}
-                                        frameStyle={artwork.frameStyle}
-                                        frameAccent={artwork.frameAccent}
                                     />
                                 </Suspense>
                             </Canvas>
@@ -274,6 +294,7 @@ export default function ArtworkInspector() {
                             onPointerMove={onPointerMove}
                             onPointerUp={onPointerUp}
                             onPointerLeave={onPointerUp}
+                            onWheel={onWheel}
                             style={{
                                 position: 'absolute', inset: 0,
                                 cursor: freeLook ? (dragging ? 'grabbing' : 'grab') : 'default',
@@ -417,9 +438,11 @@ export default function ArtworkInspector() {
                             position: 'absolute', top: 24, right: 28,
                             color: 'rgba(255,255,255,0.18)', fontSize: 11,
                             fontFamily: 'monospace', letterSpacing: '1px',
+                            display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6,
                         }}
                     >
-                        ESC to close
+                        <span>SCROLL to zoom</span>
+                        <span>ESC to close</span>
                     </motion.div>
                 </motion.div>
             )}

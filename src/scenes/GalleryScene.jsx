@@ -331,12 +331,12 @@ export default function GalleryScene() {
   ] = useLoader(
     TextureLoader,
     [
-      '/textures/Concrete044D_4K-PNG/Concrete044D_4K-PNG_Color.png',
-      '/textures/Concrete044D_4K-PNG/Concrete044D_4K-PNG_NormalGL.png',
-      '/textures/Concrete044D_4K-PNG/Concrete044D_4K-PNG_Roughness.png',
-      '/textures/Concrete044D_4K-PNG/Concrete044D_4K-PNG_Metalness.png',
-      '/textures/Concrete044D_4K-PNG/Concrete044D_4K-PNG_Displacement.png',
-      '/textures/Concrete044D_4K-PNG/Concrete044D_4K-PNG_AmbientOcclusion.png',
+      '/textures/Concrete044D_4K-PNG/Concrete044D_4K-PNG_Color_2K.jpg',
+      '/textures/Concrete044D_4K-PNG/Concrete044D_4K-PNG_NormalGL_2K.jpg',
+      '/textures/Concrete044D_4K-PNG/Concrete044D_4K-PNG_Roughness_2K.jpg',
+      '/textures/Concrete044D_4K-PNG/Concrete044D_4K-PNG_Metalness_2K.jpg',
+      '/textures/Concrete044D_4K-PNG/Concrete044D_4K-PNG_Displacement_2K.jpg',
+      '/textures/Concrete044D_4K-PNG/Concrete044D_4K-PNG_AmbientOcclusion_2K.jpg',
     ]
   )
 
